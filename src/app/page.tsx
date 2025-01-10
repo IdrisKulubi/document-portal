@@ -1,121 +1,277 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileText, Upload, Search, Filter } from "lucide-react";
+import Image from "next/image";
+import { Card } from "@/components/ui/card";
+import {  User, Printer, Shield, Search, Share2 } from "lucide-react";
 
 export default function Home() {
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 },
+  };
+
+  const staggerChildren = {
+    animate: { transition: { staggerChildren: 0.1 } },
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1">
-        <section className="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
-          <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
-            <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl lg:text-7xl">
-              Document Management{" "}
-              <span className="text-primary">Made Simple</span>
-            </h1>
-            <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-              Securely store, organize, and share your documents. Built with
-              modern technologies for the best user experience.
-            </p>
-            <div className="space-x-4">
-              <Link href="/documents">
-                <Button size="lg" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  View Documents
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
+      <header className="w-full py-4 px-6 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
+        <div className="container mx-auto flex justify-between items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center"
+          >
+            <Image src="/assets/logo/logo.svg" alt="Document Portal" width={100} height={100} className="w-10 h-10 animate-float mr-2" />
+            <span className="text-xl font-bold text-white">
+              Document Portal
+            </span>
+          </motion.div>
+          <motion.nav
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Button variant="ghost" className="text-white hover:text-blue-400">
+              Features
+            </Button>
+            <Button variant="ghost" className="text-white hover:text-blue-400">
+              About
+            </Button>
+            <Button variant="ghost" className="text-white hover:text-blue-400">
+              Contact
+            </Button>
+          </motion.nav>
+        </div>
+      </header>
+
+      <main className="flex-grow">
+        <section className="py-20 px-6">
+          <div className="container mx-auto text-center">
+            <motion.h1
+              className="text-4xl md:text-6xl font-bold text-white mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              Secure Document Sharing Made Simple
+            </motion.h1>
+            <motion.p
+              className="text-xl text-gray-300 mb-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              Upload, manage, and share your documents with ease and security.
+            </motion.p>
+            <motion.div
+              className="flex flex-col sm:flex-row justify-center gap-4"
+              variants={staggerChildren}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.div variants={fadeInUp}>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white"
+                  onMouseEnter={() => setHoveredButton("admin")}
+                  onMouseLeave={() => setHoveredButton(null)}
+                >
+                  <User
+                    className={`mr-2 h-5 w-5 ${
+                      hoveredButton === "admin" ? "animate-bounce" : ""
+                    }`}
+                  />
+                  Login as Admin
                 </Button>
-              </Link>
-              <Link href="/documents?upload=true">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  Upload Document
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto text-lg px-8 bg-gray-600 hover:bg-gray-700 text-white"
+                  onMouseEnter={() => setHoveredButton("printer")}
+                  onMouseLeave={() => setHoveredButton(null)}
+                >
+                  <Printer
+                    className={`mr-2 h-5 w-5 ${
+                      hoveredButton === "printer" ? "animate-bounce" : ""
+                    }`}
+                  />
+                  Login as Printer
                 </Button>
-              </Link>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        <section className="container space-y-6 py-8 md:py-12 lg:py-24">
-          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3">
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <Upload className="h-12 w-12 text-primary" />
-                <div className="space-y-2">
-                  <h3 className="font-bold">Easy Upload</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Drag and drop your documents or use the file picker.
-                    Supports PDF and Word documents.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <Search className="h-12 w-12 text-primary" />
-                <div className="space-y-2">
-                  <h3 className="font-bold">Smart Search</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Quickly find documents with our powerful search
-                    functionality.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <Filter className="h-12 w-12 text-primary" />
-                <div className="space-y-2">
-                  <h3 className="font-bold">Advanced Filters</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Sort and filter documents by date, title, and status.
-                  </p>
-                </div>
-              </div>
-            </div>
+        <section className="py-20 px-6 bg-gray-800">
+          <div className="container mx-auto">
+            <motion.h2
+              className="text-3xl font-bold text-white mb-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              Key Features
+            </motion.h2>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+              variants={staggerChildren}
+              initial="initial"
+              animate="animate"
+            >
+              {[
+                {
+                  icon: Shield,
+                  title: "Secure Storage",
+                  description:
+                    "Your documents are encrypted and stored securely.",
+                },
+                {
+                  icon: Search,
+                  title: "Easy Retrieval",
+                  description:
+                    "Find your documents quickly with our powerful search.",
+                },
+                {
+                  icon: Share2,
+                  title: "Controlled Sharing",
+                  description: "Share documents with specific users or groups.",
+                },
+              ].map((feature, index) => (
+                <motion.div key={index} variants={fadeInUp}>
+                  <Card className="p-6 bg-gray-700 border-gray-600 hover:border-blue-400 transition-colors duration-300">
+                    <feature.icon className="w-12 h-12 text-blue-400 mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-300">{feature.description}</p>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
 
-        <section className="container py-8 md:py-12 lg:py-24">
-          <div className="mx-auto max-w-[58rem] space-y-6 text-center">
-            <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
-              Ready to get started?
-            </h2>
-            <p className="leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-              Join us today and experience the future of document management.
-            </p>
-            <Link href="/documents">
-              <Button size="lg" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Get Started
+        <section className="py-20 px-6">
+          <div className="container mx-auto text-center">
+            <motion.h2
+              className="text-3xl font-bold text-white mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              How It Works
+            </motion.h2>
+            <motion.div
+              className="flex flex-col md:flex-row justify-center items-center gap-8"
+              variants={staggerChildren}
+              initial="initial"
+              animate="animate"
+            >
+              {[
+                {
+                  step: 1,
+                  title: "Upload",
+                  description: "Securely upload your documents",
+                },
+                {
+                  step: 2,
+                  title: "Manage",
+                  description: "Organize and categorize your files",
+                },
+                {
+                  step: 3,
+                  title: "Share",
+                  description: "Control access and share as needed",
+                },
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  variants={fadeInUp}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-2xl font-bold text-white mb-4">
+                    {item.step}
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-300">{item.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="py-20 px-6 bg-gray-800">
+          <div className="container mx-auto text-center">
+            <motion.h2
+              className="text-3xl font-bold text-white mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              Ready to Get Started?
+            </motion.h2>
+            <motion.p
+              className="text-xl text-gray-300 mb-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Join thousands of satisfied users and revolutionize your document
+              management today.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <Button
+                size="lg"
+                className="text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Sign Up Now
               </Button>
-            </Link>
+            </motion.div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-          <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-            <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-              Built with{" "}
-              <a
-                href="https://nextjs.org"
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium underline underline-offset-4"
-              >
-                Next.js
-              </a>
-              . The source code is available on{" "}
-              <a
-                href="https://github.com/yourusername/your-repo"
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium underline underline-offset-4"
-              >
-                GitHub
-              </a>
-              .
-            </p>
+      <footer className="w-full py-6 px-6 bg-gray-900 border-t border-gray-800">
+        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
+          <div className="text-gray-400 mb-4 md:mb-0">
+            &copy; 2025 Document Portal. All rights reserved.
           </div>
+          <nav className="flex gap-4">
+            <a
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Terms of Service
+            </a>
+            <a
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Contact Us
+            </a>
+          </nav>
         </div>
       </footer>
     </div>
