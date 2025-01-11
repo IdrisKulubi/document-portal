@@ -13,7 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { DocumentPreview } from "./document-preview";
 import { DocumentShare } from "./document-share";
-import { deleteDocument, toggleDocumentStatus } from "@/lib/actions/documents";
+import {
+  deleteDocumentAction,
+  toggleDocumentStatus,
+} from "@/lib/actions/documents";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentActionsProps {
@@ -67,17 +70,17 @@ export function DocumentActions({ document: doc }: DocumentActionsProps) {
   const handleDelete = async () => {
     setIsLoading(true);
     try {
-      await deleteDocument(doc.id);
+      await deleteDocumentAction(doc.id);
       toast({
         title: "Success",
         description: "Document deleted successfully",
       });
       router.refresh();
     } catch (error) {
-      console.error(error);
       toast({
         title: "Error",
-        description: "Failed to delete document",
+        description:
+          error instanceof Error ? error.message : "Failed to delete document",
         variant: "destructive",
       });
     } finally {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import type { NextAuthConfig, Adapter } from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import db from "./db/drizzle";
@@ -87,6 +87,7 @@ export const config = {
     }),
   ],
   callbacks: {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async signIn({ user }) {
       return true;
     },
@@ -116,6 +117,7 @@ export const config = {
     maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.AUTH_SECRET,
+  // @ts-expect-error  this is a custom adapter
   adapter: customAdapter as Adapter,
 } satisfies NextAuthConfig;
 

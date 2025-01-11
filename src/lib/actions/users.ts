@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import db from "@/db/drizzle";
@@ -60,6 +61,7 @@ export async function updateUser(
       message: `User ${data.role ? "role" : "status"} updated successfully`,
     };
   } catch (error) {
+    console.error("Error updating user:", error);
     throw new Error("Failed to update user. Please try again.");
   }
 }
@@ -128,5 +130,39 @@ export async function deleteUser(userId: string) {
     return { success: true, message: "User deleted successfully" };
   } catch (error) {
     throw new Error("Failed to delete user. Please try again.");
+  }
+}
+
+export async function updateUserAdmin(
+  userId: string,
+  data: { role?: string; isActive?: boolean }
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  if (userId === session.user.id && data.role !== "admin") {
+    throw new Error("Cannot demote yourself");
+  }
+
+  try {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...(data.role !== undefined && { role: data.role }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    revalidatePath("/admin");
+    return {
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    };
+  } catch (error) {
+    throw new Error("Failed to update user");
   }
 }

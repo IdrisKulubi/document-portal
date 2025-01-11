@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { del } from "@vercel/blob";
 
 export type SortField = "title" | "createdAt";
 export type SortOrder = "asc" | "desc";
@@ -319,4 +320,36 @@ export async function shareDocument({
 
   revalidatePath("/documents");
   return true;
+}
+
+export async function deleteDocumentAction(id: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  try {
+    const document = await db
+      .select()
+      .from(documents)
+      .where(
+        and(
+          eq(documents.id, id),
+          session.user.role === "admin"
+            ? undefined
+            : eq(documents.uploadedBy, session.user.id ?? "")
+        )
+      )
+      .limit(1);
+
+    if (!document[0]) throw new Error("Document not found");
+
+    await del(document[0].fileUrl);
+    await db.delete(documents).where(eq(documents.id, id));
+
+    revalidatePath("/documents");
+    revalidatePath("/admin");
+    return { success: true, message: "Document deleted successfully" };
+  } catch (error) {
+    console.error("[DELETE_DOCUMENT]", error);
+    throw new Error("Failed to delete document");
+  }
 }

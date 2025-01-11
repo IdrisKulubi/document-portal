@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateUser, deleteUser } from "@/lib/actions/users";
+import { deleteUser, updateUserAdmin } from "@/lib/actions/users";
 import type { User } from "@/lib/actions/users";
 import { MoreHorizontal } from "lucide-react";
 import {
@@ -96,11 +96,10 @@ export function UserList({ users }: UserListProps) {
   const handleUpdate = async (userId: string, data: Partial<User>) => {
     setUpdating(userId);
     try {
-      const result = await updateUser(userId, data);
+      const result = await updateUserAdmin(userId, data);
       toast({
         title: "Success",
         description: result.message,
-        variant: "default",
       });
       router.refresh();
     } catch (error) {
