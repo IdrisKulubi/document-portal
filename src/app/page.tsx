@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
-import {  User, Printer, Shield, Search, Share2 } from "lucide-react";
+import { User, Printer, Shield, Search, Share2 } from "lucide-react";
+import Link from "next/link";
+import router from "next/router";
 
 export default function Home() {
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
@@ -30,7 +32,13 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="flex items-center"
           >
-            <Image src="/assets/logo/logo.svg" alt="Document Portal" width={100} height={100} className="w-10 h-10 animate-float mr-2" />
+            <Image
+              src="/assets/logo/logo.svg"
+              alt="Document Portal"
+              width={100}
+              height={100}
+              className="w-10 h-10 animate-float mr-2"
+            />
             <span className="text-xl font-bold text-white">
               Document Portal
             </span>
@@ -79,19 +87,21 @@ export default function Home() {
               animate="animate"
             >
               <motion.div variants={fadeInUp}>
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white"
-                  onMouseEnter={() => setHoveredButton("admin")}
-                  onMouseLeave={() => setHoveredButton(null)}
-                >
-                  <User
-                    className={`mr-2 h-5 w-5 ${
-                      hoveredButton === "admin" ? "animate-bounce" : ""
-                    }`}
-                  />
-                  Login as Admin
-                </Button>
+                <Link href="/auth/signin">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white"
+                    onMouseEnter={() => setHoveredButton("admin")}
+                    onMouseLeave={() => setHoveredButton(null)}
+                  >
+                    <User
+                      className={`mr-2 h-5 w-5 ${
+                        hoveredButton === "admin" ? "animate-bounce" : ""
+                      }`}
+                    />
+                    Sign In
+                  </Button>
+                </Link>
               </motion.div>
               <motion.div variants={fadeInUp}>
                 <Button
@@ -239,6 +249,7 @@ export default function Home() {
               <Button
                 size="lg"
                 className="text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => router.push("/auth/signin")}
               >
                 Sign Up Now
               </Button>

@@ -11,30 +11,36 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
-      const result = await signIn("email", {
+      const result = await signIn("credentials", {
         email,
-        callbackUrl: "/documents",
         redirect: false,
+        callbackUrl: "/documents",
       });
 
       if (result?.error) {
         toast({
           title: "Error",
-          description: "Something went wrong. Please try again.",
+          description: "Invalid email address.",
           variant: "destructive",
         });
       } else {
+        router.push("/documents");
         toast({
           title: "Success",
-          description: "Check your email for the login link.",
+          description: "Successfully signed in.",
         });
       }
     } catch (error) {
@@ -44,6 +50,8 @@ export default function SignIn() {
         description: "An unexpected error occurred.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,13 +73,14 @@ export default function SignIn() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Sign In with Email
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </CardFooter>
         </form>

@@ -1,9 +1,18 @@
+import { redirect } from "next/navigation";
 import { getDocumentStats } from "@/lib/actions/admin";
 import { DocumentStats } from "@/components/admin/document-stats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
+import { auth } from "../../../auth";
 
 export default async function AdminPage() {
+  const session = await auth();
+
+  // Double-check authorization server-side
+  if (!session?.user || !session.user.email?.endsWith(process.env.ADMIN_EMAILS!)) {
+    redirect("/documents");
+  }
+
   const stats = await getDocumentStats();
 
   return (
@@ -22,7 +31,8 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.recentUploads.map((doc) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {stats.recentUploads.map((doc: any) => (
                 <div
                   key={doc.id}
                   className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"

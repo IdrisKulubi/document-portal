@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/db/drizzle";
+import db from "@/db/drizzle";
 import { documents, users, documentShares } from "@/db/schema";
-import { eq, desc, asc, ilike, and, count, sql, or } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { eq, desc, asc, ilike, and, count, sql, or, inArray } from "drizzle-orm";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export type SortField = "title" | "createdAt";

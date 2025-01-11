@@ -2,19 +2,23 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import db from "./db/drizzle";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+
+const emailSchema = z.string().email();
 
 const customAdapter = {
   ...DrizzleAdapter(db),
   createUser: async (userData: any) => {
+    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
     const user = await db
       .insert(users)
       .values({
         ...userData,
-        role: "user",
+        role: adminEmails.includes(userData.email) ? "admin" : "user",
       })
       .returning();
     return user[0];
@@ -23,106 +27,65 @@ const customAdapter = {
 
 export const config = {
   pages: {
-    signIn: "/sign-in",
-    error: "/sign-in",
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
+  secret: process.env.AUTH_SECRET,
   adapter: customAdapter,
   providers: [
-    Google({
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          prompt: "select_account",
-          access_type: "offline",
-          response_type: "code",
-        },
+    Credentials({
+      name: "Email",
+      credentials: {
+        email: { label: "Email", type: "email" },
+      },
+      async authorize(credentials) {
+        try {
+          const { email } = credentials;
+          const parsedEmail = emailSchema.parse(email);
+
+          // Check if user exists
+          let user = await db.query.users.findFirst({
+            where: eq(users.email, parsedEmail),
+          });
+
+          // If user doesn't exist, create one
+          if (!user) {
+            const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+            const [newUser] = await db
+              .insert(users)
+              .values({
+                email: parsedEmail,
+                name: parsedEmail.split("@")[0],
+                role: adminEmails.includes(parsedEmail) ? "admin" : "user",
+              })
+              .returning();
+            user = newUser;
+          }
+
+          return user;
+        } catch (error) {
+          return null;
+        }
       },
     }),
   ],
   callbacks: {
-    jwt: async ({ token, user, account, trigger, session }: any) => {
+    jwt: async ({ token, user }) => {
       if (user) {
-        if (account?.provider === "google") {
-          const existingUser = await db.query.users.findFirst({
-            where: (users, { eq }) => eq(users.email, user.email),
-          });
-
-          if (existingUser) {
-            token.role = existingUser.role;
-          } else {
-            token.role = "user";
-            const userId = crypto.randomUUID();
-            await db
-              .insert(users)
-              .values({
-                id: userId,
-                name: user.name,
-                email: user.email,
-                image: user.image,
-                role: "user",
-              })
-              .onConflictDoUpdate({
-                target: users.email,
-                set: {
-                  name: user.name,
-                  image: user.image,
-                },
-              });
-          }
-        } else {
-          token.role = user.role;
-        }
-
-        if (user.name === "NO_NAME") {
-          token.name = user.email!.split("@")[0];
-          await db
-            .update(users)
-            .set({ name: token.name })
-            .where(eq(users.id, user.id));
-        }
-
-        if (trigger === "signIn" || trigger === "signUp") {
-          try {
-            const response = await fetch(
-              new URL("/api/cart/merge", process.env.NEXTAUTH_URL).toString(),
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id }),
-              }
-            );
-            if (!response.ok) {
-              console.error("Failed to merge carts");
-            }
-          } catch (error) {
-            console.error("Error merging carts:", error);
-          }
-        }
+        token.role = user.role;
+        token.email = user.email;
       }
-
-      if (session?.user.name && trigger === "update") {
-        token.name = session.user.name;
-      }
-
       return token;
     },
-    session: async ({ session, token }: any) => {
+    session: async ({ session, token }) => {
       session.user.id = token.sub;
       session.user.role = token.role;
+      session.user.email = token.email;
       return session;
-    },
-    authorized({ request, auth }: any) {
-      const protectedPaths = [/\/shipping-address/];
-      const { pathname } = request.nextUrl;
-      return !protectedPaths.some((p) => p.test(pathname)) || !!auth;
-    },
-    signIn: async ({ user, account }: any) => {
-      console.log("🔑 Sign in callback triggered:", { user, account });
-      return true;
     },
   },
 } satisfies NextAuthConfig;

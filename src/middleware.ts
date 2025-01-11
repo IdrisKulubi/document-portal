@@ -1,12 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "../auth";
+import { getToken } from "next-auth/jwt";
 
 export default async function middleware(request: NextRequest) {
-  const session = await auth();
-  const isAuth = !!session;
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  });
+
+  const isAuth = !!token;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
+  const isDocumentsPage = request.nextUrl.pathname.startsWith("/documents");
 
+  // Handle auth pages (signin)
   if (isAuthPage) {
     if (isAuth) {
       return NextResponse.redirect(new URL("/documents", request.url));
@@ -14,11 +20,15 @@ export default async function middleware(request: NextRequest) {
     return null;
   }
 
-  if (!isAuth) {
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  // Handle protected routes
+  if (!isAuth && (isDocumentsPage || isAdminPage)) {
+    const signInUrl = new URL("/auth/signin", request.url);
+    signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
-  if (isAdminPage && session?.user?.role !== "admin") {
+  // Handle admin routes
+  if (isAdminPage && token?.role !== "admin") {
     return NextResponse.redirect(new URL("/documents", request.url));
   }
 
@@ -26,5 +36,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/documents/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|assets).*)"],
 };
