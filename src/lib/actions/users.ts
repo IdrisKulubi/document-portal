@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/db/drizzle";
+import db from "@/db/drizzle";
 import { users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { eq, desc, count } from "drizzle-orm";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export type User = {

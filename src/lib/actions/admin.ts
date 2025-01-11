@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/db/drizzle";
+import db from "@/db/drizzle";
 import { documents, users } from "@/db/schema";
 import { eq, and, count, sql, desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 
 export async function getDocumentStats() {
   const session = await auth();

@@ -1,9 +1,9 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { db } from "@/db/drizzle";
+import db from "@/db/drizzle";
 import { documents } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export async function uploadDocument(formData: FormData) {
@@ -20,16 +20,17 @@ export async function uploadDocument(formData: FormData) {
 
   // Upload file to blob storage
   const blob = await put(file.name, file, {
-    access: "private",
+    access: "public",
     token: process.env.BLOB_TOKEN!,
   });
 
   // Create document record
   const [document] = await db
     .insert(documents)
-    .values({
-      title,
-      description,
+      .values({
+      
+      title: title,
+      description: description,
       fileUrl: blob.url,
       uploadedBy: session.user.id,
     })

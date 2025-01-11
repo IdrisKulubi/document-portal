@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,43 +11,65 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/documents";
+  const error = searchParams.get("error");
+
+  // Handle error messages
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description:
+          error === "Callback"
+            ? "There was a problem with the authentication process."
+            : "An unexpected error occurred during authentication.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) return;
+
     setIsLoading(true);
 
     try {
       const result = await signIn("credentials", {
         email,
         redirect: false,
-        callbackUrl: "/documents",
+        callbackUrl,
       });
 
-      if (result?.error) {
+      if (!result?.ok || result?.error) {
         toast({
           title: "Error",
-          description: "Invalid email address.",
+          description: result?.error || "Failed to sign in",
           variant: "destructive",
         });
-      } else {
-        router.push("/documents");
-        toast({
-          title: "Success",
-          description: "Successfully signed in.",
-        });
+        return;
       }
+
+      toast({
+        title: "Success",
+        description: "Successfully signed in",
+      });
+
+      router.push(callbackUrl);
+      router.refresh();
     } catch (error) {
       console.error(error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -56,16 +78,21 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
       <Card className="w-[400px]">
         <CardHeader>
           <h1 className="text-2xl font-bold text-center">Sign In</h1>
+          <p className="text-center text-muted-foreground">
+            Enter your email to continue
+          </p>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <Input
                   id="email"
                   type="email"
@@ -74,13 +101,19 @@ export default function SignIn() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="w-full"
                 />
               </div>
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              size="lg"
+            >
+              {isLoading ? "Signing in..." : "Continue with Email"}
             </Button>
           </CardFooter>
         </form>

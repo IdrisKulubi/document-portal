@@ -2,7 +2,17 @@
 
 import db from "@/db/drizzle";
 import { documents, users, documentShares } from "@/db/schema";
-import { eq, desc, asc, ilike, and, count, sql, or, inArray } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  asc,
+  ilike,
+  and,
+  count,
+  sql,
+  or,
+  inArray,
+} from "drizzle-orm";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
@@ -197,7 +207,7 @@ export async function bulkDeleteDocuments(ids: string[]) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  const documents = await db
+  const deletedDocuments = await db
     .delete(documents)
     .where(
       and(
@@ -211,7 +221,7 @@ export async function bulkDeleteDocuments(ids: string[]) {
 
   revalidatePath("/documents");
   revalidatePath("/admin");
-  return documents;
+  return deletedDocuments;
 }
 
 export async function incrementDownloadCount(id: string) {
@@ -306,10 +316,10 @@ export async function shareDocument({
     : null;
 
   await db.insert(documentShares).values({
-    documentId,
+    documentId: documentId,
     sharedBy: session.user.id,
     sharedWith: targetUser.id,
-    expiresAt,
+    expiresAt: expiresAt,
   });
 
   // Send email notification (implement this based on your email service)
