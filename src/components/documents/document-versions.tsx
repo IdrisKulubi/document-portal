@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -72,6 +73,9 @@ export function DocumentVersions({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Document Versions</DialogTitle>
+            <DialogDescription>
+              View the history of your document
+            </DialogDescription>
           </DialogHeader>
           <div className="max-h-[600px] overflow-y-auto">
             <Table>

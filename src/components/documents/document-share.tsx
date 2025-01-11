@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -70,7 +71,9 @@ export function DocumentShare({ documentId }: DocumentShareProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      
       <DialogTrigger asChild>
+
         <Button variant="outline" size="sm" className="gap-2">
           <Share className="h-4 w-4" />
           Share
@@ -79,6 +82,9 @@ export function DocumentShare({ documentId }: DocumentShareProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Share Document</DialogTitle>
+          <DialogDescription>
+            Share your document with others
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

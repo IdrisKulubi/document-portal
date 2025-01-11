@@ -19,12 +19,16 @@ interface DocumentsPageProps {
 export default async function DocumentsPage({
   searchParams,
 }: DocumentsPageProps) {
+  const { search, status, sortBy, sortOrder, page } = await Promise.resolve(
+    searchParams
+  );
+
   const result = await getDocuments({
-    search: searchParams.search,
-    status: searchParams.status as "active" | "inactive",
-    sortBy: searchParams.sortBy as "title" | "date" | "size",
-    sortOrder: searchParams.sortOrder as "asc" | "desc",
-    page: Number(searchParams.page) || 1,
+    search,
+    status: status as "active" | "inactive",
+    sortBy: sortBy as "title" | "date" | "size",
+    sortOrder: sortOrder as "asc" | "desc",
+    page: Number(page) || 1,
   });
 
   return (

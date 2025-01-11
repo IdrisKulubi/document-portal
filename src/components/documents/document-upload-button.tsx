@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
@@ -30,6 +31,9 @@ export function DocumentUploadButton() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
+          <DialogDescription>
+            Upload a document to your library. Supported formats: PDF, TXT
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <UploadButton

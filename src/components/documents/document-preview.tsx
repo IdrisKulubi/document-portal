@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -92,9 +93,9 @@ export function DocumentPreview({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{document.title}</DialogTitle>
-            <div className="text-sm text-muted-foreground">
+            <DialogDescription>
               {formatBytes(document.fileSize)} • {document.fileType}
-            </div>
+            </DialogDescription>
           </DialogHeader>
           <div className="aspect-video w-full overflow-hidden rounded-md">
             {document.fileType === "application/pdf" ? (
