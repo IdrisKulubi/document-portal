@@ -17,8 +17,8 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2,  } from "lucide-react";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { Loader2 } from "lucide-react";
+import { UploadButton } from "@/lib/uploadthing";
 import { useUploadThing } from "@/lib/uploadthing";
 
 const formSchema = z.object({
@@ -105,7 +105,7 @@ export function DocumentUploadForm() {
           )}
         />
 
-        <UploadDropzone
+        <UploadButton
           endpoint="documentUploader"
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           onClientUploadComplete={(res) => {

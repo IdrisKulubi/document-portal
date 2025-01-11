@@ -1,102 +1,53 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { documents, documentVersions } from "@/db/schema";
-import { eq, max } from "drizzle-orm";
+import { documents } from "@/db/schema";
 import db from "@/db/drizzle";
-import { auth } from "../../../../auth";
+import { auth } from "@/auth";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
   documentUploader: f({
-    pdf: { maxFileSize: "32MB" },
-    text: { maxFileSize: "8MB" },
+    pdf: { maxFileSize: "32MB", maxFileCount: 1 },
+    text: { maxFileSize: "8MB", maxFileCount: 1 },
   })
-    .middleware(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    .middleware(async ({ req }) => {
+      // This code runs on your server before upload
       const session = await auth();
 
+      // If you throw, the user will not be able to upload
       if (!session?.user) throw new UploadThingError("Unauthorized");
 
-      return {
-        userId: session.user.id,
-        documentId: "",
-        comment: "",
-      };
+      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      const [existingDoc] = await db
-        .select()
-        .from(documents)
-        .where(eq(documents.id, metadata.documentId || ""))
-        .limit(1);
-
-      if (existingDoc) {
-        // Get the latest version number
-        const [latestVersion] = await db
-          .select({ version: max(documentVersions.version) })
-          .from(documentVersions)
-          .where(eq(documentVersions.documentId, existingDoc.id))
-          .limit(1);
-
-        const newVersion = (latestVersion?.version || 0) + 1;
-
-        // Create new version
-        await db.insert(documentVersions).values({
-          documentId: existingDoc.id ?? "",
-          version: newVersion,
-          fileUrl: file.url,
-          fileSize: file.size,
-          fileType: file.type,
-          uploadedBy: metadata.userId ?? "",
-          comment: metadata.comment,
-          createdAt: new Date(),
-          fileKey: file.key,
-        });
-
-        // Update document with latest version
-        const [document] = await db
-          .update(documents)
-          .set({
-            fileUrl: file.url,
-            fileSize: file.size,
-            fileType: file.type,
-            updatedAt: new Date(),
-          })
-          .where(eq(documents.id, existingDoc.id))
-          .returning();
-
-        return { documentId: document.id };
-      } else {
-        // Create new document
+      try {
+        // Create document record
         const [document] = await db
           .insert(documents)
           .values({
             title: file.name,
-            description: "",
-            fileName: file.name,
             fileUrl: file.url,
+            fileName: file.name,
             fileSize: file.size,
             fileType: file.type,
             uploadedBy: metadata.userId ?? "",
             isActive: true,
             createdAt: new Date(),
+            updatedAt: new Date(),
+            downloadCount: 0,
           })
           .returning();
 
-        // Create initial version
-        await db.insert(documentVersions).values({
-          documentId: document.id ?? "",
-          version: 1,
-          fileUrl: file.url,
-          fileKey: file.key,
-          fileSize: file.size,
-          fileType: file.type,
-          uploadedBy: metadata.userId ?? "",
-          comment: "Initial version",
-          createdAt: new Date(),
-        });
+        console.log("Upload complete for userId:", metadata.userId);
+        console.log("file url", file.url);
 
         return { documentId: document.id };
+      } catch (error) {
+        console.error("Error in onUploadComplete:", error);
+        throw new UploadThingError("Failed to process upload");
       }
     }),
 } satisfies FileRouter;
