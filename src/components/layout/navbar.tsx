@@ -11,15 +11,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
+import Image from "next/image";
 
 export function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <nav className="border-b bg-background">
+    <nav className="  bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
       <div className="container flex h-16 items-center px-4">
+        <Image
+          src="/assets/logo/logo.svg"
+          alt="Document Portal"
+          width={100}
+          height={100}
+          className="w-10 h-10 animate-float mr-2"
+        />
         <Link href="/" className="font-bold">
-          {window.location.pathname === "/admin" ? "Admin Dashboard" : "Document Manager"}
+          {window.location.pathname === "/admin"
+            ? "Admin Dashboard"
+            : "Document Portal"}
         </Link>
         <div className="ml-auto flex items-center space-x-4">
           {session ? (

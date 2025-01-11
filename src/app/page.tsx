@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { User, Printer, Shield, Search, Share2 } from "lucide-react";
 import Link from "next/link";
@@ -24,42 +23,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
-      <header className="w-full py-4 px-6 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
-        <div className="container mx-auto flex justify-between items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center"
-          >
-            <Image
-              src="/assets/logo/logo.svg"
-              alt="Document Portal"
-              width={100}
-              height={100}
-              className="w-10 h-10 animate-float mr-2"
-            />
-            <span className="text-xl font-bold text-white">
-              Document Portal
-            </span>
-          </motion.div>
-          <motion.nav
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Button variant="ghost" className="text-white hover:text-blue-400">
-              Features
-            </Button>
-            <Button variant="ghost" className="text-white hover:text-blue-400">
-              About
-            </Button>
-            <Button variant="ghost" className="text-white hover:text-blue-400">
-              Contact
-            </Button>
-          </motion.nav>
-        </div>
-      </header>
+      
 
       <main className="flex-grow">
         <section className="py-20 px-6">
@@ -104,8 +68,9 @@ export default function Home() {
                 </Link>
               </motion.div>
               <motion.div variants={fadeInUp}>
-                <Button
-                  size="lg"
+                <Link href="/auth/signin">
+                  <Button
+                    size="lg"
                   className="w-full sm:w-auto text-lg px-8 bg-gray-600 hover:bg-gray-700 text-white"
                   onMouseEnter={() => setHoveredButton("printer")}
                   onMouseLeave={() => setHoveredButton(null)}
@@ -116,7 +81,8 @@ export default function Home() {
                     }`}
                   />
                   Login as Printer
-                </Button>
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
           </div>
@@ -238,8 +204,8 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              Join thousands of satisfied users and revolutionize your document
-              management today.
+              Securely manage and organize your personal documents in one private, 
+              convenient location.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
