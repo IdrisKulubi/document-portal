@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/db/drizzle";
+import { auth } from "@/auth";
+import db from "@/db/drizzle";
 import { documents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     // Upload file to blob storage
     const blob = await put(file.name, file, {
-      access: "private",
+      access: "public",
       token: process.env.BLOB_TOKEN!,
     });
 
@@ -31,10 +31,13 @@ export async function POST(req: Request) {
     const [document] = await db
       .insert(documents)
       .values({
-        title,
-        description,
+        title: title,
+        description: description,
         fileUrl: blob.url,
-        uploadedBy: session.user.id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadedBy: session.user.id ?? "",
       })
       .returning();
 
@@ -63,7 +66,7 @@ export async function GET(req: Request) {
       .where(
         session.user.role === "admin"
           ? undefined
-          : eq(documents.uploadedBy, session.user.id)
+          : eq(documents.uploadedBy, session.user.id ?? "")
       )
       .limit(limit)
       .offset(offset);

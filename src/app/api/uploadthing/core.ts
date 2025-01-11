@@ -19,8 +19,8 @@ export const ourFileRouter = {
 
       return {
         userId: session.user.id,
-        documentId: metadata?.documentId,
-        comment: metadata?.comment,
+        documentId: "",
+        comment: "",
       };
     })
     .onUploadComplete(async ({ metadata, file }) => {
@@ -42,15 +42,15 @@ export const ourFileRouter = {
 
         // Create new version
         await db.insert(documentVersions).values({
-          documentId: existingDoc.id,
+          documentId: existingDoc.id ?? "",
           version: newVersion,
           fileUrl: file.url,
-          fileKey: file.key,
           fileSize: file.size,
           fileType: file.type,
-          uploadedBy: metadata.userId,
+          uploadedBy: metadata.userId ?? "",
           comment: metadata.comment,
-          
+          createdAt: new Date(),
+          fileKey: file.key,
         });
 
         // Update document with latest version
@@ -72,26 +72,28 @@ export const ourFileRouter = {
           .insert(documents)
           .values({
             title: file.name,
+            description: "",
             fileName: file.name,
             fileUrl: file.url,
             fileSize: file.size,
             fileType: file.type,
-            uploadedBy: metadata.userId,
-          
-
+            uploadedBy: metadata.userId ?? "",
+            isActive: true,
+            createdAt: new Date(),
           })
           .returning();
 
         // Create initial version
         await db.insert(documentVersions).values({
-          documentId: document.id,
+          documentId: document.id ?? "",
           version: 1,
           fileUrl: file.url,
           fileKey: file.key,
           fileSize: file.size,
           fileType: file.type,
-          uploadedBy: metadata.userId,
+          uploadedBy: metadata.userId ?? "",
           comment: "Initial version",
+          createdAt: new Date(),
         });
 
         return { documentId: document.id };

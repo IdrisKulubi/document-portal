@@ -41,11 +41,7 @@ export type DocumentWithUser = {
   };
 };
 
-interface GetDocumentsResult {
-  documents: DocumentWithUser[];
-  totalPages: number;
-  totalDocuments: number;
-}
+
 
 export async function getDocuments({
   search,
@@ -66,7 +62,7 @@ export async function getDocuments({
   const whereClause = [];
 
   if (!isAdmin) {
-    whereClause.push(eq(documents.uploadedBy, session.user.id));
+    whereClause.push(eq(documents.uploadedBy, session.user.id ?? ""));
   }
 
   if (userId && isAdmin) {
@@ -148,7 +144,7 @@ export async function deleteDocument(id: string) {
     .where(
       session.user.role === "admin"
         ? eq(documents.id, id)
-        : eq(documents.uploadedBy, session.user.id)
+        : eq(documents.uploadedBy, session.user.id ?? "")
     )
     .limit(1);
 
@@ -213,7 +209,7 @@ export async function bulkDeleteDocuments(ids: string[]) {
       and(
         session.user.role === "admin"
           ? undefined
-          : eq(documents.uploadedBy, session.user.id),
+          : eq(documents.uploadedBy, session.user.id ?? ""),
         inArray(documents.id, ids)
       )
     )
@@ -270,7 +266,6 @@ export async function shareDocument({
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  // Find the user to share with
   const [targetUser] = await db
     .select()
     .from(users)
@@ -280,14 +275,13 @@ export async function shareDocument({
     throw new Error("User not found");
   }
 
-  // Check if the document exists and the user has access to it
   const [document] = await db
     .select()
     .from(documents)
     .where(
       and(
         eq(documents.id, documentId),
-        eq(documents.uploadedBy, session.user.id)
+        eq(documents.uploadedBy, session.user.id ?? "")
       )
     );
 
@@ -295,7 +289,6 @@ export async function shareDocument({
     throw new Error("Document not found or access denied");
   }
 
-  // Check if the document is already shared with this user
   const [existingShare] = await db
     .select()
     .from(documentShares)
@@ -317,13 +310,14 @@ export async function shareDocument({
 
   await db.insert(documentShares).values({
     documentId: documentId,
-    sharedBy: session.user.id,
+    sharedBy: session.user.id ?? "",
     sharedWith: targetUser.id,
     expiresAt: expiresAt,
+    createdAt: new Date(),
   });
 
-  // Send email notification (implement this based on your email service)
-  // await sendShareNotification(targetUser.email, document.title, session.user.email);
+  // Send email notification 
+  // await sendShareNotification
 
   revalidatePath("/documents");
   return true;

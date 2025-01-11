@@ -107,6 +107,7 @@ export function DocumentUploadForm() {
 
         <UploadDropzone
           endpoint="documentUploader"
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           onClientUploadComplete={(res) => {
             toast({
               title: "Upload completed",

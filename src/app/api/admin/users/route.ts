@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/db/drizzle";
+import { auth } from "@/auth";
+import db from "@/db/drizzle";
 import { users } from "@/db/schema";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session?.user || session.user.role !== "admin") {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/db/drizzle";
+import { auth } from "@/auth";
+import db from "@/db/drizzle";
 import { documents } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { del } from "@vercel/blob";
@@ -23,7 +23,7 @@ export async function DELETE(
           eq(documents.id, params.id),
           session.user.role === "admin"
             ? undefined
-            : eq(documents.uploadedBy, session.user.id)
+            : eq(documents.uploadedBy, session.user.id ?? "")
         )
       )
       .limit(1);

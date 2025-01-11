@@ -10,9 +10,9 @@ export async function uploadDocument(formData: FormData) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  const title = formData.get("title") as string;
+  const title = formData.get("title") as string | undefined;
   const description = formData.get("description") as string | null;
-  const file = formData.get("file") as File;
+  const file = formData.get("file") as File | undefined;
 
   if (!title || !file) {
     throw new Error("Missing required fields");
@@ -24,15 +24,23 @@ export async function uploadDocument(formData: FormData) {
     token: process.env.BLOB_TOKEN!,
   });
 
+  console.log(blob);
+
   // Create document record
   const [document] = await db
     .insert(documents)
-      .values({
-      
+    .values({
       title: title,
-      description: description,
+      description: description ?? null,
       fileUrl: blob.url,
-      uploadedBy: session.user.id,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      uploadedBy: session.user.id ?? "",
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      downloadCount: 0,
     })
     .returning();
 

@@ -2,11 +2,11 @@ import { getDocuments } from "@/lib/actions/documents";
 import { formatDistanceToNow } from "date-fns";
 
 export async function RecentDocuments() {
-  const recentDocs = await getDocuments(1, 5);
+  const recentDocs = await getDocuments();
 
   return (
     <div className="space-y-4">
-      {recentDocs.map((doc) => (
+      {recentDocs.documents.map((doc) => (
         <div
           key={doc.id}
           className="flex items-center justify-between border-b pb-2"
@@ -18,7 +18,7 @@ export async function RecentDocuments() {
             </p>
           </div>
           <div className="text-sm text-muted-foreground">
-            {formatDistanceToNow(doc.createdAt)} ago
+            {formatDistanceToNow(doc.createdAt ?? new Date())} ago
           </div>
         </div>
       ))}

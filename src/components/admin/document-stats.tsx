@@ -4,19 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download, Users, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-interface DocumentStats {
+type DocumentStats = {
   totalDocuments: number;
   totalDownloads: number;
   activeUsers: number;
   recentUploads: {
     id: string;
     title: string;
-    uploadedBy: {
-      email: string;
-    };
-    createdAt: Date;
+    uploadedBy: { email: string };
+    createdAt: Date | null;
   }[];
-}
+};
 
 export function DocumentStats({ stats }: { stats: DocumentStats }) {
   return (
@@ -69,7 +67,7 @@ export function DocumentStats({ stats }: { stats: DocumentStats }) {
               <div key={doc.id} className="text-xs">
                 <span className="font-medium">{doc.uploadedBy.email}</span>{" "}
                 uploaded <span className="font-medium">{doc.title}</span>{" "}
-                {formatDistanceToNow(doc.createdAt)} ago
+                {doc.createdAt ? formatDistanceToNow(doc.createdAt) : "N/A"} ago
               </div>
             ))}
           </div>
