@@ -11,7 +11,7 @@ export type User = {
   email: string;
   role: string;
   isActive: boolean;
-  createdAt: Date;
+  createdAt: Date | null;
 };
 
 export async function getUsers() {
@@ -40,22 +40,28 @@ export async function updateUser(
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== "admin") {
-    throw new Error("Unauthorized");
+    throw new Error("You are not authorized to update users");
   }
 
-  // Prevent self-demotion
   if (userId === session.user.id && data.role !== "admin") {
-    throw new Error("Cannot demote yourself");
+    throw new Error("You cannot remove your own admin privileges");
   }
 
-  const [updatedUser] = await db
-    .update(users)
-    .set(data)
-    .where(eq(users.id, userId))
-    .returning();
+  try {
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, userId))
+      .returning();
 
-  revalidatePath("/admin");
-  return updatedUser;
+    revalidatePath("/admin");
+    return {
+      success: true,
+      message: `User ${data.role ? "role" : "status"} updated successfully`,
+    };
+  } catch (error) {
+    throw new Error("Failed to update user. Please try again.");
+  }
 }
 
 export async function getUserStats() {
@@ -72,4 +78,55 @@ export async function getUserStats() {
     .from(users);
 
   return stats[0];
+}
+
+export async function addUser(email: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("You are not authorized to add users");
+  }
+
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (existingUser) {
+    throw new Error("This email is already registered");
+  }
+
+  try {
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        name: email.split("@")[0],
+        role: "user",
+        isActive: true,
+      })
+      .returning();
+
+    revalidatePath("/admin");
+    return { success: true, message: "User added successfully" };
+  } catch (error) {
+    throw new Error("Failed to add user. Please try again.");
+  }
+}
+
+export async function deleteUser(userId: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("You are not authorized to delete users");
+  }
+
+  if (userId === session.user.id) {
+    throw new Error("You cannot delete your own account");
+  }
+
+  try {
+    await db.delete(users).where(eq(users.id, userId));
+    revalidatePath("/admin");
+    return { success: true, message: "User deleted successfully" };
+  } catch (error) {
+    throw new Error("Failed to delete user. Please try again.");
+  }
 }

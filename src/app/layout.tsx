@@ -7,6 +7,7 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
+import { Navbar } from "@/components/layout/navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,8 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+            <Navbar />
+
             {children}
           </ThemeProvider>
         </SessionProvider>

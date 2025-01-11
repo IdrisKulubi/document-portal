@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { MoreHorizontal } from "lucide-react";
@@ -36,10 +36,13 @@ export function DocumentActions({ document: doc }: DocumentActionsProps) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
   const [isLoading, setIsLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    setShareUrl(`${window.location.origin}/documents/${doc.id}`);
+  }, [doc.id]);
 
   const handleDownload = async () => {
-    if (!isAdmin) return;
-
     try {
       const response = await fetch(doc.fileUrl);
       const blob = await response.blob();
@@ -85,7 +88,7 @@ export function DocumentActions({ document: doc }: DocumentActionsProps) {
   return (
     <div className="flex items-center gap-2">
       <DocumentPreview document={doc} onDownload={handleDownload} />
-      <DocumentShare documentId={doc.id} />
+      <DocumentShare documentId={doc.id} documentUrl={shareUrl} />
       {isAdmin && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

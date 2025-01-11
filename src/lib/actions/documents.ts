@@ -41,8 +41,6 @@ export type DocumentWithUser = {
   };
 };
 
-
-
 export async function getDocuments({
   search,
   status,
@@ -61,16 +59,16 @@ export async function getDocuments({
   // Build the where clause
   const whereClause = [];
 
+  // Regular users can only see active documents
   if (!isAdmin) {
-    whereClause.push(eq(documents.uploadedBy, session.user.id ?? ""));
+    whereClause.push(eq(documents.isActive, true));
+  } else if (status) {
+    // Admins can filter by status
+    whereClause.push(eq(documents.isActive, status === "active"));
   }
 
   if (userId && isAdmin) {
     whereClause.push(eq(documents.uploadedBy, userId));
-  }
-
-  if (status) {
-    whereClause.push(eq(documents.isActive, status === "active"));
   }
 
   if (search) {
@@ -316,7 +314,7 @@ export async function shareDocument({
     createdAt: new Date(),
   });
 
-  // Send email notification 
+  // Send email notification
   // await sendShareNotification
 
   revalidatePath("/documents");

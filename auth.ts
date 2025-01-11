@@ -16,8 +16,7 @@ const customAdapter = {
     try {
       const adminEmails =
         process.env.ADMIN_EMAILS?.split(",").map((email) => email.trim()) || [];
-      console.log("[CREATE_USER] Admin emails:", adminEmails);
-      console.log("[CREATE_USER] User data:", userData);
+   
 
       const [user] = await db
         .insert(users)
@@ -89,11 +88,9 @@ export const config = {
   ],
   callbacks: {
     async signIn({ user }) {
-      console.log("[SIGNIN_CALLBACK] User:", user);
       return true;
     },
     jwt: async ({ token, user }) => {
-      console.log("[JWT_CALLBACK] Token:", token, "User:", user);
       if (user) {
         token.role = user.role;
         token.email = user.email;
@@ -102,7 +99,6 @@ export const config = {
       return token;
     },
     session: async ({ session, token }) => {
-      console.log("[SESSION_CALLBACK] Session:", session, "Token:", token);
       session.user.id = token.sub!;
       session.user.role = token.role as "admin" | "user";
       session.user.email = token.email as string;

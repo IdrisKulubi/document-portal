@@ -4,24 +4,49 @@ import { DocumentStats } from "@/components/admin/document-stats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { auth } from "../../../auth";
+import { DocumentUploadButton } from "@/components/documents/document-upload-button";
+import { getUsers } from "@/lib/actions/users";
+import { AddUserForm } from "@/components/admin/add-user-form";
+import { UserList } from "@/components/admin/user-list";
 
 export default async function AdminPage() {
   const session = await auth();
 
-  // Double-check authorization server-side
-  if (!session?.user || !session.user.email?.endsWith(process.env.ADMIN_EMAILS!)) {
+  if (!session?.user || session.user.role !== "admin") {
     redirect("/documents");
   }
 
   const stats = await getDocumentStats();
+  const users = await getUsers();
 
   return (
     <div className="container space-y-8 py-8">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <DocumentUploadButton />
+        </div>
+        <DocumentStats stats={stats} />
+      </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Document Statistics</h2>
-        <DocumentStats stats={stats} />
+        <h2 className="text-xl font-semibold">User Management</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Authorized User</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AddUserForm />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Existing Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserList users={users} />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-4">

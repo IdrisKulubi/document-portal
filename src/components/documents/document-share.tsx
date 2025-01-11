@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,68 +9,63 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Share, Loader2 } from "lucide-react";
+import {
+  Share,
+  Copy,
+  Loader2,
+  
+} from "lucide-react";
+import { FaWhatsapp, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
-import { shareDocument } from "@/lib/actions/documents";
-
-const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  expiresInDays: z.number().min(1).max(30).optional(),
-});
 
 interface DocumentShareProps {
   documentId: string;
+  documentUrl: string;
 }
 
-export function DocumentShare({ documentId }: DocumentShareProps) {
+export function DocumentShare({ documentUrl }: DocumentShareProps) {
   const [open, setOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      expiresInDays: 7,
-    },
-  });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleCopyLink = async () => {
     try {
-      await shareDocument({
-        documentId,
-        email: values.email,
-        expiresInDays: values.expiresInDays,
-      });
+      setCopying(true);
+      await navigator.clipboard.writeText(documentUrl);
       toast({
         title: "Success",
-        description: "Document shared successfully",
+        description: "Link copied to clipboard",
       });
-      setOpen(false);
-      form.reset();
     } catch (error) {
+      console.error("Error copying link:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to share document",
+        description: "Failed to copy link",
         variant: "destructive",
       });
+    } finally {
+      setCopying(false);
     }
+  };
+
+  const shareToSocial = (platform: "whatsapp" | "linkedin" | "twitter") => {
+    const text = encodeURIComponent("Check out this document!");
+    const url = encodeURIComponent(documentUrl);
+
+    const shareUrls = {
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+    };
+
+    window.open(shareUrls[platform], "_blank");
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      
       <DialogTrigger asChild>
-
         <Button variant="outline" size="sm" className="gap-2">
           <Share className="h-4 w-4" />
           Share
@@ -83,55 +75,54 @@ export function DocumentShare({ documentId }: DocumentShareProps) {
         <DialogHeader>
           <DialogTitle>Share Document</DialogTitle>
           <DialogDescription>
-            Share your document with others
+            Share this document via link or social media
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="user@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="expiresInDays"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expires In (Days)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={30}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Input readOnly value={documentUrl} className="flex-1" />
             <Button
-              type="submit"
-              className="w-full"
-              disabled={form.formState.isSubmitting}
+              variant="secondary"
+              size="icon"
+              onClick={handleCopyLink}
+              disabled={copying}
             >
-              {form.formState.isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {copying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Copy className="h-4 w-4" />
               )}
-              Share Document
             </Button>
-          </form>
-        </Form>
+          </div>
+
+          <div className="flex items-center justify-center space-x-4">
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1"
+              onClick={() => shareToSocial("whatsapp")}
+            >
+              <FaWhatsapp className="h-5 w-5 text-green-600" />
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1"
+              onClick={() => shareToSocial("linkedin")}
+            >
+              <FaLinkedin className="h-5 w-5 text-blue-600" />
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1"
+              onClick={() => shareToSocial("twitter")}
+            >
+              <FaTwitter className="h-5 w-5 text-sky-500" />
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

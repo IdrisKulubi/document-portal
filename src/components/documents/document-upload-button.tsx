@@ -14,11 +14,16 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { UploadButton } from "@/lib/uploadthing";
+import { useSession } from "next-auth/react";
 
 export function DocumentUploadButton() {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Only show upload button for admin
+  if (session?.user?.role !== "admin") return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -40,7 +45,6 @@ export function DocumentUploadButton() {
             endpoint="documentUploader"
             onClientUploadComplete={(res) => {
               if (res) {
-                console.log("Files: ", res);
                 toast({
                   title: "Success",
                   description: "Document uploaded successfully",

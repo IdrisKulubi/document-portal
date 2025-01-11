@@ -24,7 +24,6 @@ export async function uploadDocument(formData: FormData) {
     token: process.env.BLOB_TOKEN!,
   });
 
-  console.log(blob);
 
   // Create document record
   const [document] = await db

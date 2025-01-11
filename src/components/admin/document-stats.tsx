@@ -63,7 +63,7 @@ export function DocumentStats({ stats }: { stats: DocumentStats }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {stats.recentUploads.slice(0, 3).map((doc) => (
+            {stats.recentUploads.slice(0, 1).map((doc) => (
               <div key={doc.id} className="text-xs">
                 <span className="font-medium">{doc.uploadedBy.email}</span>{" "}
                 uploaded <span className="font-medium">{doc.title}</span>{" "}
