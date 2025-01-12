@@ -26,20 +26,17 @@ export default function SignIn() {
       router.replace("/documents");
     }
   }, [status, router]);
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-
     setIsLoading(true);
 
     try {
       console.log('Session status:', status);
       const result = await signIn("credentials", {
         email,
-        redirect: false, // Changed to false to handle redirect manually
-        callbackUrl: "/documents",
+        redirect: false,
       });
       console.log('SignIn result:', result);
 
@@ -50,10 +47,11 @@ export default function SignIn() {
           variant: "destructive",
         });
       } else if (result?.ok) {
-        router.replace("/documents");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        window.location.href = "/documents";
       }
     } catch (error) {
-      console.error("error", error);
+      console.error("SignIn error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
