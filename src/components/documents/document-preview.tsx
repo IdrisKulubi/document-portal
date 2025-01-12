@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {  Download, Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 
@@ -47,6 +47,12 @@ export function DocumentPreview({
         <html>
           <head>
             <title>${document.title}</title>
+            <style>
+              @media print {
+                body { visibility: visible; }
+              }
+              body { visibility: hidden; }
+            </style>
           </head>
           <body>
             <embed src="${url}#toolbar=0" type="${document.fileType}" style="width:100%; height:100vh;" />
@@ -68,8 +74,6 @@ export function DocumentPreview({
 
   return (
     <>
-      
-
       {isAdmin && (
         <Button
           variant="outline"
@@ -120,6 +124,7 @@ export function DocumentPreview({
                   src={`${document.fileUrl}#toolbar=0`}
                   className="h-full w-full"
                   title={document.title}
+                  style={{ visibility: "hidden" }}
                 />
               </div>
             ) : (
