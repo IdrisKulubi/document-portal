@@ -11,13 +11,12 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import {  useSearchParams } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/documents";
   const error = searchParams.get("error");
@@ -43,28 +42,17 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await signIn("credentials", {
         email,
-        redirect: false,
+        redirect: true,
         callbackUrl,
       });
-
-      if (!result?.ok || result?.error) {
-        toast({
-          title: "Error",
-          description: "Unauthorized email address",
-          variant: "destructive",
-        });
-        return;
-      }
 
       toast({
         title: "Success",
         description: "Successfully signed in",
       });
-
-      router.push(callbackUrl);
-      router.refresh();
     } catch (error) {
       console.error(error);
       toast({
