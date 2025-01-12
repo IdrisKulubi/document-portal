@@ -15,10 +15,17 @@ export function DocumentFilters() {
   const searchParams = useSearchParams();
 
   const updateSearchParams = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set(key, value);
-    params.delete("page"); // Reset to first page when filters change
-    router.push(`?${params.toString()}`);
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (value === "all") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+
+    params.delete("page"); // Reset pagination
+    router.push(`/documents?${params.toString()}`);
+    router.refresh(); // Force refresh
   };
 
   return (
@@ -26,15 +33,16 @@ export function DocumentFilters() {
       <div className="grid gap-2">
         <Label htmlFor="sort">Sort by</Label>
         <Select
-          defaultValue={searchParams.get("sortBy") || "createdAt"}
+          defaultValue={searchParams.get("sortBy") || "date"}
           onValueChange={(value) => updateSearchParams("sortBy", value)}
         >
           <SelectTrigger id="sort" className="w-[180px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="createdAt">Date Added</SelectItem>
+            <SelectItem value="date">Date Added</SelectItem>
             <SelectItem value="title">Title</SelectItem>
+            <SelectItem value="size">File Size</SelectItem>
           </SelectContent>
         </Select>
       </div>

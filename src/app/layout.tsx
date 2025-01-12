@@ -8,6 +8,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
 import { Navbar } from "@/components/layout/navbar";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default async function RootLayout({
             <Navbar />
 
             {children}
+            <Toaster />
           </ThemeProvider>
         </SessionProvider>
       </body>

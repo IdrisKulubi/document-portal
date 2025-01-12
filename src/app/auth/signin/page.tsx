@@ -52,7 +52,7 @@ export default function SignIn() {
       if (!result?.ok || result?.error) {
         toast({
           title: "Error",
-          description: result?.error || "Failed to sign in",
+          description: "Unauthorized email address",
           variant: "destructive",
         });
         return;

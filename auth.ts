@@ -7,6 +7,7 @@ import db from "./db/drizzle";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { checkUserAuthorization } from "@/lib/actions/auth";
 
 const emailSchema = z.string().email();
 
@@ -16,7 +17,6 @@ const customAdapter = {
     try {
       const adminEmails =
         process.env.ADMIN_EMAILS?.split(",").map((email) => email.trim()) || [];
-   
 
       const [user] = await db
         .insert(users)
@@ -48,33 +48,19 @@ export const config = {
           const parsedEmail = emailSchema.parse(email);
 
           // Check if user exists
-          let user = await db.query.users.findFirst({
+          const user = await db.query.users.findFirst({
             where: eq(users.email, parsedEmail),
           });
 
-          // If user doesn't exist, create one
+          // Don't create new users automatically
           if (!user) {
-            const adminEmails =
-              process.env.ADMIN_EMAILS?.split(",").map((email) =>
-                email.trim()
-              ) || [];
-            const [newUser] = await db
-              .insert(users)
-              .values({
-                email: parsedEmail,
-                name: parsedEmail.split("@")[0],
-                role: adminEmails.includes(parsedEmail) ? "admin" : "user",
-                isActive: true,
-              })
-              .returning();
-            user = newUser;
+            throw new Error("User not found");
           }
 
           if (!user.isActive) {
             throw new Error("Account is deactivated");
           }
 
-          // Ensure role is typed correctly
           return {
             ...user,
             role: user.role as "admin" | "user",
@@ -87,9 +73,14 @@ export const config = {
     }),
   ],
   callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async signIn({ user }) {
-      return true;
+      try {
+        await checkUserAuthorization(user.email as string);
+        return true;
+      } catch (error) {
+        console.error("[AUTH_ERROR]", error);
+        return false;
+      }
     },
     jwt: async ({ token, user }) => {
       if (user) {

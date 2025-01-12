@@ -5,9 +5,25 @@ import { DocumentFilters } from "@/components/documents/document-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentList } from "@/components/documents/document-list";
 
-export default async function DocumentsPage() {
+type Props = {
+  params: { [key: string]: string | string[] | undefined };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export default async function DocumentsPage({ searchParams }: Props) {
+  const page = Number(searchParams?.page) || 1;
+  const search = searchParams?.search as string | undefined;
+  const sortBy = (searchParams?.sortBy as "date" | "title" | "size") || "date";
+  const sortOrder = (searchParams?.sortOrder as "asc" | "desc") || "desc";
+  const status = searchParams?.status as "active" | "inactive" | undefined;
+
   const result = await getDocuments({
-    page: 1,
+    page,
+    search,
+    sortBy,
+    sortOrder,
+    status,
+    perPage: 10,
   });
 
   return (

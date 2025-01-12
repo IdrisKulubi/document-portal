@@ -6,44 +6,34 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { cn } from "@/lib/utils";
 
 export function DocumentSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isPending, startTransition] = useTransition();
   const [value, setValue] = useState(searchParams.get("search") || "");
   const debouncedValue = useDebounce(value, 500);
 
-  const createQueryString = useCallback(
-    (params: { [key: string]: string | null }) => {
-      const current = new URLSearchParams(searchParams.toString());
-      Object.entries(params).forEach(([key, value]) => {
-        if (value === null) {
-          current.delete(key);
-        } else {
-          current.set(key, value);
-        }
-      });
-      return current.toString();
-    },
-    [searchParams]
-  );
-
   const handleSearch = useCallback(
-    (searchTerm: string) => {
+    (term: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (term) {
+        params.set("search", term);
+      } else {
+        params.delete("search");
+      }
+
+      params.delete("page"); // Reset pagination
       startTransition(() => {
-        const queryString = createQueryString({
-          search: searchTerm || null,
-          page: null,
-        });
-        router.push(`/documents?${queryString}`);
+        router.push(`/documents?${params.toString()}`);
+        router.refresh(); // Force refresh
       });
     },
-    [router, createQueryString]
+    [router, searchParams]
   );
 
-  // Update search when debounced value changes
   useEffect(() => {
     handleSearch(debouncedValue);
   }, [debouncedValue, handleSearch]);
@@ -70,12 +60,6 @@ export function DocumentSearch() {
           <X className="h-4 w-4" />
         </Button>
       )}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-md bg-white/50",
-          isPending ? "block" : "hidden"
-        )}
-      />
     </div>
   );
 }

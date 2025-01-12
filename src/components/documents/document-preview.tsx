@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, Printer } from "lucide-react";
+import {  Download, Printer } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 
@@ -68,15 +68,7 @@ export function DocumentPreview({
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={() => setOpen(true)}
-      >
-        <Eye className="h-4 w-4" />
-        Preview
-      </Button>
+      
 
       {isAdmin && (
         <Button
