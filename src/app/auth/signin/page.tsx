@@ -23,7 +23,7 @@ export default function SignIn() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/documents");
+      router.replace("/documents"); // Ensure redirection is handled by Next.js router
     }
   }, [status, router]);
 
@@ -33,12 +33,12 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      console.log('Session status:', status);
+      console.log("Session status:", status);
       const result = await signIn("credentials", {
         email,
         redirect: false,
       });
-      console.log('SignIn result:', result);
+      console.log("SignIn result:", result);
 
       if (result?.error) {
         toast({
@@ -48,7 +48,7 @@ export default function SignIn() {
         });
       } else if (result?.ok) {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        window.location.href = "/documents";
+        router.replace("/documents"); // Changed from window.location.href to router.replace
       }
     } catch (error) {
       console.error("SignIn error:", error);
