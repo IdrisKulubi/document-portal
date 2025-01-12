@@ -57,7 +57,8 @@ export default function SignIn() {
     try {
       const result = await signIn("credentials", {
         email,
-        redirect: false,
+        callbackUrl,
+        redirect: true,
       });
 
       if (!result?.ok) {
@@ -66,12 +67,7 @@ export default function SignIn() {
           description: "Invalid email address",
           variant: "destructive",
         });
-        return;
       }
-
-      setTimeout(() => {
-        window.location.href = callbackUrl;
-      }, 100);
     } catch (error) {
       console.error(error);
       toast({

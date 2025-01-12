@@ -12,18 +12,35 @@ export default async function middleware(request: NextRequest) {
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
   const isDocumentsPage = request.nextUrl.pathname.startsWith("/documents");
 
-  // Redirect authenticated users trying to access auth pages
+  // Handle admin access
+  if (isAdminPage) {
+    if (!isAuth) {
+      const signInUrl = new URL("/auth/signin", request.url);
+      signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+    if (token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/documents", request.url));
+    }
+  }
+
+  // Handle protected routes
+  if (isDocumentsPage && !isAuth) {
+    const signInUrl = new URL("/auth/signin", request.url);
+    signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Handle auth pages
   if (isAuthPage && isAuth) {
-    return NextResponse.redirect(new URL("/documents", request.url));
-  }
-
-  // Redirect unauthenticated users to sign in
-  if (!isAuth && (isDocumentsPage || isAdminPage)) {
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
-  }
-
-  // Redirect non-admin users trying to access admin pages
-  if (isAdminPage && token?.role !== "admin") {
+    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+    if (
+      callbackUrl &&
+      token?.role === "admin" &&
+      callbackUrl.startsWith("/admin")
+    ) {
+      return NextResponse.redirect(new URL(callbackUrl, request.url));
+    }
     return NextResponse.redirect(new URL("/documents", request.url));
   }
 
