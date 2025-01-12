@@ -12,41 +12,20 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: session, status } = useSession();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/documents";
-  const error = searchParams.get("error");
-
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description:
-          error === "Callback"
-            ? "There was a problem with the authentication process."
-            : "An unexpected error occurred during authentication.",
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
+  const { status } = useSession();
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace(callbackUrl);
+      router.push("/documents");
     }
-  }, [status, callbackUrl, router]);
-
-  const handleClose = () => {
-    router.replace("/");
-  };
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,19 +36,20 @@ export default function SignIn() {
     try {
       const result = await signIn("credentials", {
         email,
-        callbackUrl,
-        redirect: true,
+        redirect: false,
       });
 
-      if (!result?.ok) {
+      if (result?.error) {
         toast({
-          title: "Error",
-          description: "Invalid email address",
+          title: "Access Denied",
+          description: "You are not authorized to access this application.",
           variant: "destructive",
         });
+      } else {
+        router.push("/documents");
       }
     } catch (error) {
-      console.error(error);
+      console.error("error", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -80,18 +60,14 @@ export default function SignIn() {
     }
   };
 
-  if (status === "authenticated") {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <Card className="w-[400px] relative">
         <Button
           variant="ghost"
           size="icon"
           className="absolute right-2 top-2"
-          onClick={handleClose}
+          onClick={() => router.push("/")}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -103,22 +79,20 @@ export default function SignIn() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full"
-                />
-              </div>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="w-full"
+              />
             </div>
           </CardContent>
           <CardFooter>
