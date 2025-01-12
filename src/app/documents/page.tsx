@@ -6,11 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentList } from "@/components/documents/document-list";
 
 type Props = {
-  params: { [key: string]: string | string[] | undefined };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function DocumentsPage({ searchParams }: Props) {
+export default async function DocumentsPage(props: Props) {
+  const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
   const search = searchParams?.search as string | undefined;
   const sortBy = (searchParams?.sortBy as "date" | "title" | "size") || "date";
