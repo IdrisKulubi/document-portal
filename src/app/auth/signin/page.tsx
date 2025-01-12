@@ -23,9 +23,10 @@ export default function SignIn() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/documents");
+      router.replace("/documents");
     }
   }, [status, router]);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +35,13 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
+      console.log('Session status:', status);
       const result = await signIn("credentials", {
         email,
-        redirect: false,
+        redirect: false, // Changed to false to handle redirect manually
+        callbackUrl: "/documents",
       });
+      console.log('SignIn result:', result);
 
       if (result?.error) {
         toast({
@@ -45,8 +49,8 @@ export default function SignIn() {
           description: "You are not authorized to access this application.",
           variant: "destructive",
         });
-      } else {
-        router.push("/documents");
+      } else if (result?.ok) {
+        router.replace("/documents");
       }
     } catch (error) {
       console.error("error", error);
@@ -59,6 +63,11 @@ export default function SignIn() {
       setIsLoading(false);
     }
   };
+
+  // If already authenticated, don't render the sign-in form
+  if (status === "authenticated") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
