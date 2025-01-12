@@ -25,7 +25,7 @@ interface DocumentPreviewProps {
 }
 
 export function DocumentPreview({
-  document,
+  document: doc,
   onDownload,
 }: DocumentPreviewProps) {
   const [open, setOpen] = useState(false);
@@ -34,39 +34,43 @@ export function DocumentPreview({
 
   const handlePrint = async () => {
     try {
-      const response = await fetch(document.fileUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const printFrame = document.createElement("iframe");
+      printFrame.style.display = "none";
+      document.body.appendChild(printFrame);
 
-      const printFrame = window.document.createElement("iframe");
-      printFrame.style.cssText = "position:fixed; top:0; left:0; display:none;";
-      window.document.body.appendChild(printFrame);
+      const frameDoc =
+        printFrame.contentDocument || printFrame.contentWindow?.document;
+      if (!frameDoc) return;
 
-      printFrame.contentDocument?.write(`
+      frameDoc.write(`
         <!DOCTYPE html>
         <html>
           <head>
-            <title>${document.title}</title>
+            <title>${doc.title}</title>
             <style>
-              @media print {
-                body { visibility: visible; }
+              @media screen { 
+                body { display: none !important; } 
               }
-              body { visibility: hidden; }
+              @media print { 
+                body { display: block !important; } 
+              }
             </style>
           </head>
           <body>
-            <embed src="${url}#toolbar=0" type="${document.fileType}" style="width:100%; height:100vh;" />
-            <script>
-              window.print();
-              window.onafterprint = () => {
-                URL.revokeObjectURL('${url}');
-                window.frameElement?.remove();
-              };
-            </script>
+            <embed
+              src="${doc.fileUrl}#toolbar=0&view=FitH"
+              type="${doc.fileType}"
+              style="width:100%; height:100vh;"
+            />
           </body>
         </html>
       `);
-      printFrame.contentDocument?.close();
+      frameDoc.close();
+
+      setTimeout(() => {
+        window.print();
+        printFrame.remove();
+      }, 1000);
     } catch (error) {
       console.error("Error printing document:", error);
     }
@@ -99,41 +103,17 @@ export function DocumentPreview({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{document.title}</DialogTitle>
+            <DialogTitle>{doc.title}</DialogTitle>
             <DialogDescription>
-              {formatBytes(document.fileSize)} • {document.fileType}
+              {formatBytes(doc.fileSize)} • {doc.fileType}
             </DialogDescription>
           </DialogHeader>
-          <div className="aspect-video w-full overflow-hidden rounded-md relative">
-            {document.fileType === "application/pdf" ? (
-              <div className="h-full">
-                <div className="absolute inset-0 bg-black/95 z-10 flex items-center justify-center print:hidden">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8">
-                    <p className="text-red-500 text-8xl font-black tracking-wider text-center px-4">
-                      FOR PRINTING ONLY
-                    </p>
-                    <p className="text-red-500 text-8xl font-black tracking-wider text-center px-4">
-                      FOR PRINTING ONLY
-                    </p>
-                    <p className="text-red-500 text-8xl font-black tracking-wider text-center px-4">
-                      FOR PRINTING ONLY
-                    </p>
-                  </div>
-                </div>
-                <iframe
-                  src={`${document.fileUrl}#toolbar=0`}
-                  className="h-full w-full"
-                  title={document.title}
-                  style={{ visibility: "hidden" }}
-                />
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">
-                  Preview not available for this file type
-                </p>
-              </div>
-            )}
+          <div className="aspect-video w-full overflow-hidden rounded-md relative bg-black/95">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-red-500 text-4xl font-black text-center px-4">
+                PRINT ONLY - NO PREVIEW AVAILABLE
+              </p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
