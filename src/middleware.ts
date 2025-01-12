@@ -12,39 +12,24 @@ export default async function middleware(request: NextRequest) {
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
   const isDocumentsPage = request.nextUrl.pathname.startsWith("/documents");
 
-  // Handle auth pages (signin)
-  if (isAuthPage) {
-    if (isAuth) {
-      return NextResponse.redirect(new URL("/documents", request.url));
-    }
-    return null;
+  // Redirect authenticated users trying to access auth pages
+  if (isAuthPage && isAuth) {
+    return NextResponse.redirect(new URL("/documents", request.url));
   }
 
-  // Handle protected routes
+  // Redirect unauthenticated users to sign in
   if (!isAuth && (isDocumentsPage || isAdminPage)) {
-    const signInUrl = new URL("/auth/signin", request.url);
-    signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
-    return NextResponse.redirect(signInUrl);
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 
-  // Handle admin routes
+  // Redirect non-admin users trying to access admin pages
   if (isAdminPage && token?.role !== "admin") {
     return NextResponse.redirect(new URL("/documents", request.url));
   }
 
-  return null;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - assets
-     */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|assets).*)",
-  ],
+  matcher: ["/documents/:path*", "/admin/:path*", "/auth/:path*"],
 };
