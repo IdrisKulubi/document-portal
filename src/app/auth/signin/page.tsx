@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -11,17 +12,19 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import {  useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/documents";
   const error = searchParams.get("error");
 
-  // Handle error messages
   useEffect(() => {
     if (error) {
       toast({
@@ -35,6 +38,16 @@ export default function SignIn() {
     }
   }, [error, toast]);
 
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(callbackUrl);
+    }
+  }, [status, callbackUrl, router]);
+
+  const handleClose = () => {
+    router.replace("/");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -42,17 +55,23 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await signIn("credentials", {
         email,
-        redirect: true,
-        callbackUrl,
+        redirect: false,
       });
 
-      toast({
-        title: "Success",
-        description: "Successfully signed in",
-      });
+      if (!result?.ok) {
+        toast({
+          title: "Error",
+          description: "Invalid email address",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setTimeout(() => {
+        window.location.href = callbackUrl;
+      }, 100);
     } catch (error) {
       console.error(error);
       toast({
@@ -65,9 +84,21 @@ export default function SignIn() {
     }
   };
 
+  if (status === "authenticated") {
+    return null;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-      <Card className="w-[400px]">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <Card className="w-[400px] relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 top-2"
+          onClick={handleClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
         <CardHeader>
           <h1 className="text-2xl font-bold text-center">Sign In</h1>
           <p className="text-center text-muted-foreground">
