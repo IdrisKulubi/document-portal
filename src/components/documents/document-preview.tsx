@@ -1,8 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Download, Printer } from "lucide-react";
+import { Download } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { PrintButton } from "@/components/pdf/PrintButton";
 
 interface DocumentPreviewProps {
   document: {
@@ -22,35 +23,8 @@ export function DocumentPreview({
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
 
-  const handlePrint = () => {
-    try {
-      // Open PDF in a new window
-      const printWindow = window.open(
-        `${doc.fileUrl}#toolbar=0&view=FitH&scrollbar=0&print-scale=1.0`,
-        "_blank",
-        "width=800,height=600"
-      );
-
-      if (printWindow) {
-        printWindow.onload = () => {
-          try {
-            printWindow.print();
-            // Close the window after printing
-            setTimeout(() => {
-              printWindow.close();
-            }, 1000);
-          } catch (error) {
-            console.error("Print error:", error);
-          }
-        };
-      }
-    } catch (error) {
-      console.error("Error printing document:", error);
-    }
-  };
-
   return (
-    <>
+    <div className="flex items-center gap-2">
       {isAdmin && (
         <Button
           variant="outline"
@@ -63,15 +37,7 @@ export function DocumentPreview({
         </Button>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={handlePrint}
-      >
-        <Printer className="h-4 w-4" />
-        Print
-      </Button>
-    </>
+      <PrintButton documentId={doc.id} />
+    </div>
   );
 }
