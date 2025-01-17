@@ -1,21 +1,15 @@
-import type { Configuration } from "webpack";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
-  },
-  webpack: (config: Configuration) => {
+  webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = config.resolve.alias || {};
-    if (typeof config.resolve.alias === 'object' && !Array.isArray(config.resolve.alias)) {
-      config.resolve.alias.canvas = false;
-    }
+    config.resolve.alias.canvas = false;
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+    };
     return config;
   },
   experimental: {
