@@ -17,7 +17,21 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
     const checkIframeLoaded = () => {
       setLoading(false);
       setTimeout(() => {
-        window.print();
+        const printPrompt = window.print();
+        // Close window after print dialog is closed
+        if (printPrompt !== undefined) {
+          Promise.resolve(printPrompt).then(() => {
+            window.close();
+          });
+        } else {
+          // For browsers that don't return a promise
+          const checkPrinting = setInterval(() => {
+            if (!document.hidden) {
+              clearInterval(checkPrinting);
+              window.close();
+            }
+          }, 1000);
+        }
       }, 1000);
     };
 
@@ -32,6 +46,7 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
       iframe.onerror = handleError;
     }
 
+    // Cleanup
     return () => {
       if (iframe) {
         iframe.onload = null;
