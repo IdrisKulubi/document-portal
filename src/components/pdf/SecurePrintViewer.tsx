@@ -14,25 +14,19 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const checkIframeLoaded = () => {
+    const handleLoad = () => {
       setLoading(false);
+      // Wait a bit to ensure PDF is fully rendered
       setTimeout(() => {
-        const printPrompt = window.print();
-        // Close window after print dialog is closed
-        if (printPrompt !== undefined) {
-          Promise.resolve(printPrompt).then(() => {
+        window.print();
+        // Wait for print dialog to close
+        const checkPrintFinished = setInterval(() => {
+          if (!document.hidden) {
+            clearInterval(checkPrintFinished);
             window.close();
-          });
-        } else {
-          // For browsers that don't return a promise
-          const checkPrinting = setInterval(() => {
-            if (!document.hidden) {
-              clearInterval(checkPrinting);
-              window.close();
-            }
-          }, 1000);
-        }
-      }, 1000);
+          }
+        }, 1000);
+      }, 1500);
     };
 
     const handleError = () => {
@@ -42,18 +36,17 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
 
     const iframe = iframeRef.current;
     if (iframe) {
-      iframe.onload = checkIframeLoaded;
+      iframe.onload = handleLoad;
       iframe.onerror = handleError;
     }
 
-    // Cleanup
     return () => {
       if (iframe) {
         iframe.onload = null;
         iframe.onerror = null;
       }
     };
-  }, []);
+  }, [pdfUrl]);
 
   if (error) {
     return (

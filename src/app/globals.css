@@ -130,3 +130,14 @@ body {
     height: 100vh;
   }
 }
+
+.pdf-pages {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-container {
+  margin: 0 auto 20px;
+  page-break-after: always;
+  display: block;
+}
