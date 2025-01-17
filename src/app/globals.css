@@ -107,14 +107,27 @@ body {
   body * {
     visibility: hidden;
   }
-  .print-container.printing * {
+  .print-container,
+  .print-container * {
     visibility: visible;
   }
-  .print-container.printing {
+  .print-container {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+  }
+  .page-container {
+    break-inside: avoid;
+    page-break-after: always;
+  }
+}
+
+@media screen {
+  .print-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
   }
 }
 

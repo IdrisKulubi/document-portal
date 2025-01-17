@@ -17,7 +17,7 @@ async function getDocumentById(id: string) {
 }
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: { documentId: string } }
 ) {
   try {
@@ -26,7 +26,9 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const document = await getDocumentById(params.documentId);
+    const documentId = params.documentId;
+    const document = await getDocumentById(documentId);
+
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
     }
@@ -44,6 +46,6 @@ export async function GET(
     return NextResponse.json({ printUrl: `/api/print/view/${token}` });
   } catch (error) {
     console.error("[PRINT_ERROR]", error);
-    return new NextResponse("Print failed", { status: 500 });
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
