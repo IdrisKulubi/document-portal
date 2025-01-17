@@ -12,9 +12,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
 
   return (
     <nav className="  bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
@@ -27,9 +29,7 @@ export function Navbar() {
           className="w-10 h-10 animate-float mr-2"
         />
         <Link href="/" className="font-bold">
-          {window.location.pathname === "/admin"
-            ? "Admin Dashboard"
-            : "Document Portal"}
+          {pathname === "/admin" ? "Admin Dashboard" : "Document Portal"}
         </Link>
         <div className="ml-auto flex items-center space-x-4">
           {session ? (
@@ -37,11 +37,11 @@ export function Navbar() {
               {session.user.role === "admin" && (
                 <Link href="/admin">
                   <Button variant="ghost">
-                    {window.location.pathname !== "/admin" && "Admin"}
+                    {pathname !== "/admin" && "Admin"}
                   </Button>
                 </Link>
               )}
-              {window.location.pathname !== "/documents" && (
+              {pathname !== "/documents" && (
                 <Link href="/documents">
                   <Button variant="ghost">Documents</Button>
                 </Link>
