@@ -37,12 +37,15 @@ export function PrintButton({ documentId }: PrintButtonProps) {
             setIsPrinting(false);
           }
         }, 1000);
+      } else {
+        throw new Error("Popup blocked");
       }
     } catch (error) {
       console.error("Print error:", error);
       toast({
         title: "Error",
-        description: "Failed to print document",
+        description:
+          error instanceof Error ? error.message : "Failed to print document",
         variant: "destructive",
       });
       setIsPrinting(false);

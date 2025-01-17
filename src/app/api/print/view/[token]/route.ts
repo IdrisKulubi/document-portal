@@ -3,10 +3,8 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.PRINT_TOKEN_SECRET!);
 
-export async function GET(
-  req: Request,
-  { params }: { params: { token: string } }
-) {
+export async function GET(req: Request, props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   try {
     const { payload } = await jwtVerify(params.token, secret);
     if (payload.action !== "print" || payload.status !== "printing") {

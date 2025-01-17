@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { SecurePrintViewer } from "@/components/pdf/SecurePrintViewer";
 
 interface PageProps {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
-export default function PrintViewer({ params }: PageProps) {
+export default function PrintViewer(props: PageProps) {
+  const params = use(props.params);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const token = params.token;
 

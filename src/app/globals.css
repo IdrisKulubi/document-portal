@@ -116,23 +116,17 @@ body {
     left: 0;
     top: 0;
     width: 100%;
+    height: 100%;
   }
-  .page-container {
-    break-inside: avoid;
-    page-break-after: always;
+  .print-container iframe {
+    width: 100%;
+    height: 100%;
   }
 }
 
 @media screen {
   .print-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
+    width: 100%;
+    height: 100vh;
   }
-}
-
-.print-container iframe {
-  border: none;
-  width: 100%;
-  height: 100vh;
 }

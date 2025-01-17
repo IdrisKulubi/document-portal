@@ -16,10 +16,8 @@ async function getDocumentById(id: string) {
   return document;
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { documentId: string } }
-) {
+export async function GET(request: Request, props: { params: Promise<{ documentId: string }> }) {
+  const params = await props.params;
   try {
     const session = await auth();
     if (!session?.user) {
