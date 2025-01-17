@@ -11,6 +11,7 @@ interface SecurePrintViewerProps {
 export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -31,20 +32,42 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
 
     const handleLoad = () => {
       setLoading(false);
+      // Wait longer for the PDF to fully render
       setTimeout(() => {
-        // Use the hidden iframe for printing
-        if (printFrameRef.current?.contentWindow) {
-          printFrameRef.current.contentWindow.print();
-        }
+        if (!isPrinting) {
+          setIsPrinting(true);
+          // Use the hidden iframe for printing
+          if (printFrameRef.current?.contentWindow) {
+            const printResult = printFrameRef.current.contentWindow.print() as
+              | Promise<void>
+              | undefined;
 
-        // Monitor for print completion
-        const checkPrintFinished = setInterval(() => {
-          if (!document.hidden) {
-            clearInterval(checkPrintFinished);
-            window.close();
+            // Handle print dialog close
+            if (printResult !== undefined) {
+              printResult
+                .then(() => {
+                  // Print completed or cancelled
+                  window.close();
+                })
+                .catch(() => {
+                  // Print failed or was cancelled
+                  setIsPrinting(false);
+                });
+            } else {
+              // For browsers that don't return a promise from print()
+              const checkPrintFinished = setInterval(() => {
+                if (!document.hidden) {
+                  clearInterval(checkPrintFinished);
+                  // Give user a moment to see the preview after printing
+                  setTimeout(() => {
+                    window.close();
+                  }, 1000);
+                }
+              }, 500);
+            }
           }
-        }, 1000);
-      }, 1500);
+        }
+      }, 2000);
     };
 
     const handleError = () => {
@@ -69,7 +92,7 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
         printFrameRef.current = null;
       }
     };
-  }, [pdfUrl]);
+  }, [pdfUrl, isPrinting]);
 
   if (error) {
     return (
@@ -86,6 +109,11 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
         <div className="flex items-center justify-center h-screen">
           <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">Preparing document for printing...</span>
+        </div>
+      )}
+      {isPrinting && !loading && (
+        <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow">
+          Printing in progress...
         </div>
       )}
       <iframe
