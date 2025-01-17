@@ -11,7 +11,6 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { printToken, status } = await req.json();
 
     // Verify the original print token
@@ -29,7 +28,10 @@ export async function POST(req: Request) {
       .setExpirationTime("30s")
       .sign(secret);
 
-    return NextResponse.json({ printAccessToken });
+    return NextResponse.json({
+      printAccessToken,
+      documentId: payload.documentId,
+    });
   } catch (error) {
     console.error("[PRINT_STATUS_ERROR]", error);
     return new NextResponse("Invalid request", { status: 400 });

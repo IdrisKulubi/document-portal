@@ -12,14 +12,32 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
+    // Create a hidden iframe for printing
+    if (!printFrameRef.current) {
+      const frame = document.createElement("iframe");
+      frame.style.visibility = "hidden";
+      frame.style.position = "fixed";
+      frame.style.right = "0";
+      frame.style.bottom = "0";
+      frame.style.width = "0";
+      frame.style.height = "0";
+      frame.src = pdfUrl;
+      document.body.appendChild(frame);
+      printFrameRef.current = frame;
+    }
+
     const handleLoad = () => {
       setLoading(false);
-      // Wait a bit to ensure PDF is fully rendered
       setTimeout(() => {
-        window.print();
-        // Wait for print dialog to close
+        // Use the hidden iframe for printing
+        if (printFrameRef.current?.contentWindow) {
+          printFrameRef.current.contentWindow.print();
+        }
+
+        // Monitor for print completion
         const checkPrintFinished = setInterval(() => {
           if (!document.hidden) {
             clearInterval(checkPrintFinished);
@@ -44,6 +62,11 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
       if (iframe) {
         iframe.onload = null;
         iframe.onerror = null;
+      }
+      // Clean up the print iframe
+      if (printFrameRef.current) {
+        document.body.removeChild(printFrameRef.current);
+        printFrameRef.current = null;
       }
     };
   }, [pdfUrl]);

@@ -108,8 +108,10 @@ body {
     visibility: hidden;
   }
   .print-container,
-  .print-container * {
-    visibility: visible;
+  .print-container *,
+  object,
+  embed {
+    visibility: visible !important;
   }
   .print-container {
     position: absolute;
@@ -118,14 +120,24 @@ body {
     width: 100%;
     height: 100%;
   }
-  .print-container iframe {
+  .print-container object,
+  .print-container embed {
     width: 100%;
     height: 100%;
+    page-break-inside: avoid;
+  }
+  /* Hide loading indicator when printing */
+  .print-container > div:first-child {
+    display: none !important;
   }
 }
 
 @media screen {
   .print-container {
+    width: 100%;
+    height: 100vh;
+  }
+  object, embed {
     width: 100%;
     height: 100vh;
   }
