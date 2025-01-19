@@ -1,7 +1,7 @@
 "use client";
 
+import SecurePrintViewer from "@/components/pdf/SecurePrintViewer";
 import { useEffect, useState, use } from "react";
-import { SecurePrintViewer } from "@/components/pdf/SecurePrintViewer";
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -44,10 +44,5 @@ export default function PrintViewer(props: PageProps) {
     );
   }
 
-  return (
-    <SecurePrintViewer
-      pdfUrl={pdfUrl}
-      watermark={`Printed by ${new Date().toLocaleString()}`}
-    />
-  );
+  return <SecurePrintViewer documentUrl={pdfUrl} printToken={token} />;
 }

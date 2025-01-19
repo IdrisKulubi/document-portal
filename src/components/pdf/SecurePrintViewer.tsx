@@ -1,98 +1,96 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, AlertCircle, Printer } from "lucide-react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface SecurePrintViewerProps {
-  pdfUrl: string;
-  watermark: string;
+  documentUrl: string;
+  printToken: string;
 }
 
-export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
-  const [loading, setLoading] = useState(true);
+const SecurePrintViewer = ({
+  printToken,
+}: SecurePrintViewerProps) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
+  // Prevent context menu and keyboard shortcuts
   useEffect(() => {
-    // Create a hidden iframe for printing
-    if (!printFrameRef.current) {
-      const frame = document.createElement("iframe");
-      frame.style.visibility = "hidden";
-      frame.style.position = "fixed";
-      frame.style.right = "0";
-      frame.style.bottom = "0";
-      frame.style.width = "0";
-      frame.style.height = "0";
-      frame.src = pdfUrl;
-      document.body.appendChild(frame);
-      printFrameRef.current = frame;
-    }
-
-    const handleLoad = () => {
-      setLoading(false);
-      // Wait longer for the PDF to fully render
-      setTimeout(() => {
-        if (!isPrinting) {
-          setIsPrinting(true);
-          // Use the hidden iframe for printing
-          if (printFrameRef.current?.contentWindow) {
-            const printResult = printFrameRef.current.contentWindow.print() as
-              | Promise<void>
-              | undefined;
-
-            // Handle print dialog close
-            if (printResult !== undefined) {
-              printResult
-                .then(() => {
-                  // Print completed or cancelled
-                  window.close();
-                })
-                .catch(() => {
-                  // Print failed or was cancelled
-                  setIsPrinting(false);
-                });
-            } else {
-              // For browsers that don't return a promise from print()
-              const checkPrintFinished = setInterval(() => {
-                if (!document.hidden) {
-                  clearInterval(checkPrintFinished);
-                  // Give user a moment to see the preview after printing
-                  setTimeout(() => {
-                    window.close();
-                  }, 1000);
-                }
-              }, 500);
-            }
-          }
-        }
-      }, 2000);
+    const preventDefaultActions = (e: KeyboardEvent | MouseEvent) => {
+      if (
+        e instanceof KeyboardEvent &&
+        ((e.ctrlKey && (e.key === "p" || e.key === "P")) ||
+          (e.ctrlKey && (e.key === "s" || e.key === "S")))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+      if (e instanceof MouseEvent && e.type === "contextmenu") {
+        e.preventDefault();
+        return false;
+      }
     };
 
-    const handleError = () => {
-      setError("Failed to load document");
-      setLoading(false);
-    };
-
-    const iframe = iframeRef.current;
-    if (iframe) {
-      iframe.onload = handleLoad;
-      iframe.onerror = handleError;
-    }
+    window.addEventListener("keydown", preventDefaultActions);
+    window.addEventListener("contextmenu", preventDefaultActions);
 
     return () => {
-      if (iframe) {
-        iframe.onload = null;
-        iframe.onerror = null;
-      }
-      // Clean up the print iframe
-      if (printFrameRef.current) {
-        document.body.removeChild(printFrameRef.current);
-        printFrameRef.current = null;
-      }
+      window.removeEventListener("keydown", preventDefaultActions);
+      window.removeEventListener("contextmenu", preventDefaultActions);
     };
-  }, [pdfUrl, isPrinting]);
+  }, []);
+
+  const handlePrint = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/print/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ printToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to print document");
+      }
+
+      // Create a temporary URL for the PDF blob
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      // Create a hidden iframe for printing
+      const printFrame = document.createElement("iframe");
+      printFrame.style.display = "none";
+      printFrame.src = url;
+
+      // Wait for iframe to load before printing
+      printFrame.onload = () => {
+        // Add event listener for after print
+        const handleAfterPrint = () => {
+          window.removeEventListener("afterprint", handleAfterPrint);
+          // Cleanup after printing is complete
+          document.body.removeChild(printFrame);
+          URL.revokeObjectURL(url);
+          setLoading(false);
+        };
+
+        window.addEventListener("afterprint", handleAfterPrint);
+
+        // Focus the iframe and trigger print
+        printFrame.contentWindow?.focus();
+        setTimeout(() => {
+          printFrame.contentWindow?.print();
+        }, 500);
+      };
+
+      document.body.appendChild(printFrame);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to print document");
+      setLoading(false);
+    }
+  };
 
   if (error) {
     return (
@@ -104,24 +102,35 @@ export function SecurePrintViewer({ pdfUrl }: SecurePrintViewerProps) {
   }
 
   return (
-    <div className="print-container">
-      {loading && (
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Preparing document for printing...</span>
-        </div>
-      )}
-      {isPrinting && !loading && (
-        <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow">
-          Printing in progress...
-        </div>
-      )}
-      <iframe
-        ref={iframeRef}
-        src={pdfUrl}
-        className={`w-full h-screen ${loading ? "hidden" : "block"}`}
-        style={{ border: "none" }}
-      />
+    <div className="print-container select-none">
+      <div
+        className="w-full h-screen bg-gray-100 flex flex-col items-center justify-center"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <Image
+          src="/preview-placeholder.png"
+          alt="Document Preview"
+          className="max-w-full max-h-[calc(100vh-100px)] object-contain select-none mb-4"
+          style={{
+            userSelect: "none",
+            pointerEvents: "none",
+            WebkitUserSelect: "none",
+          }}
+          width={1000}
+          height={1000}
+          unoptimized
+        />
+        <Button onClick={handlePrint} disabled={loading} className="mt-4">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Printer className="h-4 w-4 mr-2" />
+          )}
+          {loading ? "Printing..." : "Print Document"}
+        </Button>
+      </div>
     </div>
   );
-}
+};
+
+export default SecurePrintViewer;
