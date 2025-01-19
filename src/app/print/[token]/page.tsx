@@ -44,5 +44,5 @@ export default function PrintViewer(props: PageProps) {
     );
   }
 
-  return <SecurePrintViewer documentUrl={pdfUrl} />;
+  return <SecurePrintViewer documentUrl={pdfUrl} printToken={token} />;
 }

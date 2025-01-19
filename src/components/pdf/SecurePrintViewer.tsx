@@ -1,40 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, AlertCircle, Printer } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface SecurePrintViewerProps {
   documentUrl: string;
+  printToken: string;
 }
 
-const SecurePrintViewer = ({ documentUrl }: SecurePrintViewerProps) => {
-  const [loading, setLoading] = useState(true);
+const SecurePrintViewer = ({
+  printToken,
+}: SecurePrintViewerProps) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< Updated upstream
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-=======
-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
-  const [isPrinting, setIsPrinting] = useState(false);
->>>>>>> Stashed changes
 
   // Prevent context menu and keyboard shortcuts
   useEffect(() => {
-<<<<<<< Updated upstream
-    const handleLoad = () => {
-      setLoading(false);
-      // Wait a bit to ensure PDF is fully rendered
-      setTimeout(() => {
-        window.print();
-        // Wait for print dialog to close
-        const checkPrintFinished = setInterval(() => {
-          if (!document.hidden) {
-            clearInterval(checkPrintFinished);
-            window.close();
-          }
-        }, 1000);
-      }, 1500);
-=======
     const preventDefaultActions = (e: KeyboardEvent | MouseEvent) => {
       if (
         e instanceof KeyboardEvent &&
@@ -48,99 +31,66 @@ const SecurePrintViewer = ({ documentUrl }: SecurePrintViewerProps) => {
         e.preventDefault();
         return false;
       }
->>>>>>> Stashed changes
     };
 
     window.addEventListener("keydown", preventDefaultActions);
     window.addEventListener("contextmenu", preventDefaultActions);
 
     return () => {
-<<<<<<< Updated upstream
-      if (iframe) {
-        iframe.onload = null;
-        iframe.onerror = null;
-      }
-    };
-  }, [pdfUrl]);
-=======
       window.removeEventListener("keydown", preventDefaultActions);
       window.removeEventListener("contextmenu", preventDefaultActions);
     };
   }, []);
 
-  useEffect(() => {
-    const printFrame = document.createElement("iframe");
-    printFrame.style.display = "none";
-    printFrame.src = documentUrl;
-    document.body.appendChild(printFrame);
-    printFrameRef.current = printFrame;
+  const handlePrint = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/print/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ printToken }),
+      });
 
-    const handleLoad = () => {
-      try {
-        // Inject print-specific styles
-        const style = document.createElement("style");
-        style.textContent = `
-          @media print {
-            @page {
-              size: auto;
-              margin: 0;
-            }
-            body { 
-              visibility: hidden;
-            }
-            #print-content {
-              visibility: visible;
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              height: 100%;
-            }
-          }
-        `;
-        printFrame.contentDocument?.head.appendChild(style);
+      if (!response.ok) {
+        throw new Error("Failed to print document");
+      }
 
-        // Prepare print content
-        const originalContent =
-          printFrame.contentDocument?.body.innerHTML || "";
-        printFrame.contentDocument!.body.innerHTML = `
-          <div id="print-content">
-            ${originalContent}
-          </div>
-        `;
+      // Create a temporary URL for the PDF blob
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
 
-        setLoading(false);
+      // Create a hidden iframe for printing
+      const printFrame = document.createElement("iframe");
+      printFrame.style.display = "none";
+      printFrame.src = url;
 
-        // Automatically trigger print
+      // Wait for iframe to load before printing
+      printFrame.onload = () => {
+        // Add event listener for after print
+        const handleAfterPrint = () => {
+          window.removeEventListener("afterprint", handleAfterPrint);
+          // Cleanup after printing is complete
+          document.body.removeChild(printFrame);
+          URL.revokeObjectURL(url);
+          setLoading(false);
+        };
+
+        window.addEventListener("afterprint", handleAfterPrint);
+
+        // Focus the iframe and trigger print
+        printFrame.contentWindow?.focus();
         setTimeout(() => {
-          if (printFrame.contentWindow) {
-            setIsPrinting(true);
-            printFrame.contentWindow.focus();
-            printFrame.contentWindow.print();
-
-            // Listen for after print to clean up
-            const afterPrint = () => {
-              setIsPrinting(false);
-              window.removeEventListener("afterprint", afterPrint);
-            };
-            window.addEventListener("afterprint", afterPrint);
-          }
+          printFrame.contentWindow?.print();
         }, 500);
-      } catch (err) {
-        setError("Failed to prepare document for printing");
-        console.error(err);
-      }
-    };
+      };
 
-    printFrame.onload = handleLoad;
-
-    return () => {
-      if (printFrame && printFrame.parentNode) {
-        printFrame.parentNode.removeChild(printFrame);
-      }
-    };
-  }, [documentUrl]);
->>>>>>> Stashed changes
+      document.body.appendChild(printFrame);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to print document");
+      setLoading(false);
+    }
+  };
 
   if (error) {
     return (
@@ -153,42 +103,32 @@ const SecurePrintViewer = ({ documentUrl }: SecurePrintViewerProps) => {
 
   return (
     <div className="print-container select-none">
-      {loading || isPrinting ? (
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">
-            {loading ? "Preparing document..." : "Opening print dialog..."}
-          </span>
-        </div>
-      ) : (
-        <div
-          className="w-full h-screen bg-gray-100 flex flex-col items-center justify-center"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <Image
-            src="/preview-placeholder.png"
-            alt="Document Preview"
-            className="max-w-full max-h-[calc(100vh-100px)] object-contain select-none"
-            style={{
-              userSelect: "none",
-              pointerEvents: "none",
-              WebkitUserSelect: "none",
-            }}
-            width={1000}
-            height={1000}
-            unoptimized
-          />
-        </div>
-      )}
-<<<<<<< Updated upstream
-      <iframe
-        ref={iframeRef}
-        src={pdfUrl}
-        className={`w-full h-screen ${loading ? "hidden" : "block"}`}
-        style={{ border: "none" }}
-      />
-=======
->>>>>>> Stashed changes
+      <div
+        className="w-full h-screen bg-gray-100 flex flex-col items-center justify-center"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <Image
+          src="/preview-placeholder.png"
+          alt="Document Preview"
+          className="max-w-full max-h-[calc(100vh-100px)] object-contain select-none mb-4"
+          style={{
+            userSelect: "none",
+            pointerEvents: "none",
+            WebkitUserSelect: "none",
+          }}
+          width={1000}
+          height={1000}
+          unoptimized
+        />
+        <Button onClick={handlePrint} disabled={loading} className="mt-4">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Printer className="h-4 w-4 mr-2" />
+          )}
+          {loading ? "Printing..." : "Print Document"}
+        </Button>
+      </div>
     </div>
   );
 };
