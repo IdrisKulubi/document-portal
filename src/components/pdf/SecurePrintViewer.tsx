@@ -1,145 +1,136 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+"use client";
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+import { useEffect, useState } from "react";
+import { Loader2, AlertCircle, Printer } from "lucide-react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+
+interface SecurePrintViewerProps {
+  documentUrl: string;
+  printToken: string;
 }
 
-@layer base {
-  :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
+const SecurePrintViewer = ({
+  printToken,
+}: SecurePrintViewerProps) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+  // Prevent context menu and keyboard shortcuts
+  useEffect(() => {
+    const preventDefaultActions = (e: KeyboardEvent | MouseEvent) => {
+      if (
+        e instanceof KeyboardEvent &&
+        ((e.ctrlKey && (e.key === "p" || e.key === "P")) ||
+          (e.ctrlKey && (e.key === "s" || e.key === "S")))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+      if (e instanceof MouseEvent && e.type === "contextmenu") {
+        e.preventDefault();
+        return false;
+      }
+    };
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
+    window.addEventListener("keydown", preventDefaultActions);
+    window.addEventListener("contextmenu", preventDefaultActions);
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
+    return () => {
+      window.removeEventListener("keydown", preventDefaultActions);
+      window.removeEventListener("contextmenu", preventDefaultActions);
+    };
+  }, []);
 
-@media print {
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  const handlePrint = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/print/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ printToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to print document");
+      }
+
+      // Create a temporary URL for the PDF blob
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      // Create a hidden iframe for printing
+      const printFrame = document.createElement("iframe");
+      printFrame.style.display = "none";
+      printFrame.src = url;
+
+      // Wait for iframe to load before printing
+      printFrame.onload = () => {
+        // Add event listener for after print
+        const handleAfterPrint = () => {
+          window.removeEventListener("afterprint", handleAfterPrint);
+          // Cleanup after printing is complete
+          document.body.removeChild(printFrame);
+          URL.revokeObjectURL(url);
+          setLoading(false);
+        };
+
+        window.addEventListener("afterprint", handleAfterPrint);
+
+        // Focus the iframe and trigger print
+        printFrame.contentWindow?.focus();
+        setTimeout(() => {
+          printFrame.contentWindow?.print();
+        }, 500);
+      };
+
+      document.body.appendChild(printFrame);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to print document");
+      setLoading(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-red-500">
+        <AlertCircle className="h-8 w-8 mb-2" />
+        <p className="text-lg">{error}</p>
+      </div>
+    );
   }
-  
-  /* Hide non-printable elements */
-  .no-print {
-    display: none !important;
-  }
-  
-  /* Ensure page breaks work correctly */
-  .page-break {
-    page-break-before: always;
-  }
-}
 
-/* Add specific print container styles */
-.print-container {
-  width: 100%;
-  height: 100%;
-}
+  return (
+    <div className="print-container select-none">
+      <div
+        className="w-full h-screen bg-gray-100 flex flex-col items-center justify-center"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <Image
+          src="/preview-placeholder.png"
+          alt="Document Preview"
+          className="max-w-full max-h-[calc(100vh-100px)] object-contain select-none mb-4"
+          style={{
+            userSelect: "none",
+            pointerEvents: "none",
+            WebkitUserSelect: "none",
+          }}
+          width={1000}
+          height={1000}
+          unoptimized
+        />
+        <Button onClick={handlePrint} disabled={loading} className="mt-4">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Printer className="h-4 w-4 mr-2" />
+          )}
+          {loading ? "Printing..." : "Print Document"}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
-@media screen {
-  .print-container {
-    width: 100%;
-    height: 100vh;
-  }
-}
-
-.pdf-pages {
-  width: 100%;
-  margin: 0 auto;
-}
-
-.page-container {
-  margin: 0 auto 20px;
-  page-break-after: always;
-  display: block;
-}
+export default SecurePrintViewer;
