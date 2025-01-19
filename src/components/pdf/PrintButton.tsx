@@ -44,8 +44,7 @@ export function PrintButton({ documentId }: PrintButtonProps) {
       console.error("Print error:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to print document",
+        description: error instanceof Error ? error.message : " document",
         variant: "destructive",
       });
       setIsPrinting(false);

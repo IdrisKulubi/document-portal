@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import puppeteer from "puppeteer";
 import { jwtVerify } from "jose";
+import sharp from "sharp";
+import { PDFDocument } from "pdf-lib";
 
 const secret = new TextEncoder().encode(process.env.PRINT_TOKEN_SECRET!);
 
@@ -12,101 +13,39 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { printToken } = await req.json();
-
-    // Verify the print token
+    const { printToken, mode } = await req.json();
     const { payload } = await jwtVerify(printToken, secret);
-    if (payload.action !== "print" || !payload.fileUrl) {
-      return new NextResponse("Invalid token", { status: 401 });
+
+    // Get the original PDF
+    const response = await fetch(payload.fileUrl as string);
+    const pdfBytes = await response.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+
+    if (mode === "preview") {
+      // Return preview image
+      const pages = await pdfDoc.saveAsBase64();
+      const image = await sharp(Buffer.from(pages, "base64"))
+        .png({ quality: 70, compressionLevel: 9 })
+        .toBuffer();
+
+      return new NextResponse(image, {
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Disposition": "inline",
+        },
+      });
+    } else {
+      // Return actual PDF for printing
+      const modifiedPdf = await pdfDoc.save();
+      return new NextResponse(modifiedPdf, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": "inline",
+        },
+      });
     }
-
-    // Launch Puppeteer with additional security options
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-extensions",
-        "--disable-gpu",
-      ],
-    });
-
-    const page = await browser.newPage();
-
-    // Set additional headers and cookies if needed
-    await page.setExtraHTTPHeaders({
-      Authorization: `Bearer ${session.user.id}`,
-    });
-
-    // Load the document with a timeout
-    await page.goto(payload.fileUrl as string, {
-      waitUntil: "networkidle0",
-      timeout: 30000,
-    });
-
-    // Add watermark and other security features
-    await page.evaluate(() => {
-      const watermark = document.createElement("div");
-      watermark.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        font-size: 60px;
-        opacity: 0.2;
-        pointer-events: none;
-        z-index: 1000;
-        color: #000;
-      `;
-      watermark.textContent = "CONFIDENTIAL";
-      document.body.appendChild(watermark);
-    });
-
-    // Generate PDF with security options
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-      displayHeaderFooter: true,
-      headerTemplate: `
-        <div style="font-size: 10px; text-align: center; width: 100%; padding: 0 10px;">
-          Printed by ${session.user.email} on ${new Date().toLocaleString()}
-        </div>
-      `,
-      footerTemplate: `
-        <div style="font-size: 10px; text-align: center; width: 100%; padding: 0 10px;">
-          Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-        </div>
-      `,
-      margin: {
-        top: "2cm",
-        bottom: "2cm",
-        left: "1cm",
-        right: "1cm",
-      },
-    });
-
-    await browser.close();
-
-    // Set secure headers for the response
-    const headers = new Headers();
-    headers.set("Content-Type", "application/pdf");
-    headers.set("Content-Disposition", "inline");
-    headers.set(
-      "Cache-Control",
-      "no-store, no-cache, must-revalidate, private"
-    );
-    headers.set("Pragma", "no-cache");
-    headers.set("Expires", "0");
-
-    return new NextResponse(pdf, { headers });
   } catch (error) {
     console.error("[PRINT_REQUEST_ERROR]", error);
-    return new NextResponse(
-      "Print failed: " +
-        (error instanceof Error ? error.message : "Unknown error"),
-      { status: 500 }
-    );
+    return new NextResponse("Print failed", { status: 500 });
   }
 }
